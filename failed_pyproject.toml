@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools<=65.6.3", "wheel"]
+
+[project]
+name = "midia_pipe_hull"
+version = "0.0.1"
+authors = [
+    { name="Mateusz Krzysztof Łącki", email="matteo.lacki@gmail.com" },
+    { name="Michał Piotr Startek", email="michal.startek@mimuw.edu.pl" },
+]
+license = { file="LICENSE" }
+readme = { file="README.md" }
+
+dependencies = [
+    "csvkit",
+    "ipykernel",
+    "ipython",
+    "jupyter",
+    "jupyterlab",
+    "matplotlib",
+    "openpyxl",
+    "opentims_bruker_bridge",
+    "pandas",
+    "plotly",
+    "plotnine",
+    "pony",
+    "pymysql",
+    "pytest",
+    "seaborn",
+    "snakemake",
+    "virtualenvwrapper",
+    "pyqt5",
+    "ipympl",
+    "cowsay",
+    "UpSetPlot",
+]
+

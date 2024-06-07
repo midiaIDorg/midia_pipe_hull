@@ -4,9 +4,9 @@ from glob import glob
 from setuptools import find_packages, setup
 
 setup(
-    name="cached_opentims",
+    name="midia_pipe_hull",
     version="0.0.1",
-    url="https://github.com/michalsta/cached_opentims",
+    url="https://github.com/midiaIDorg/midia_pipe_hull",
     author="Mateusz Krzysztof Łącki, Michał Piotr Startek",
     author_email="matteo.lacki@gmail.com, michal.startek@mimuw.edu.pl",
     description="A silly will hull for dependencies of midiaID.",

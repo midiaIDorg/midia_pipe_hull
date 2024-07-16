@@ -33,6 +33,7 @@ setup(
         "ipympl",
         "cowsay",
         "UpSetPlot",
+        "duckdb",
     ],
     scripts=glob("tools/*.py"),
 )

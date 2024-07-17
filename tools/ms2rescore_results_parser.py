@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import re
 from collections import Counter
 from pathlib import Path
 from pprint import pprint
@@ -19,35 +20,27 @@ args = dict(
 )
 
 parser = argparse.ArgumentParser(
-    description="Make statistics from an ms2rescore run on SAGE input."
+    description="Make statistics from an ms2rescore run on SAGE input.",
+    formatter_class=argparse.ArgumentDefaultsHelpFormatter,
 )
 parser.add_argument("source", help="Path to raw SAGE results.", type=Path)
-parser.add_argument(
-    "config",
-    help="Path to a toml config specifying the FDR filter (field [filter]).",
-    type=Path,
-)
 parser.add_argument("output", help="Path to output.", type=Path)
 parser.add_argument(
-    "--replace_in", help="String to be replaced in the config.", default="peptide_q"
+    "--filter",
+    help="SQL specifying a filter.",
+    default=""" 
+    SELECT *
+    FROM read_csv('{source}', delim="\t")
+    WHERE 
+    "mokapot q-value" < 0.01
+    AND
+    protein_list NOT LIKE '%rev_%'
+    """,
 )
-parser.add_argument(
-    "--replace_out",
-    help="Replacement for the string to be replaced.",
-    default='"mokapot q-value',
-)
-args = parser.parse_args()
+args = parser.parse_args().__dict__
 
 if __name__ == "__main__":
-    with open(args["config"], "rb") as f:
-        config = tomllib.load(f)
-        if "replace_in" in args and "replace_out" in args:
-            config["filter"] = config["filter"].replace(
-                args["replace_in"], args["replace_out"]
-            )
-        pprint(config)
-
-    filtered_df = duckdb.query(config["filter"].format(source=args["source"])).df()
+    filtered_df = duckdb.query(args["filter"].format(source=args["source"])).df()
 
     ms1_ClusterIDs = {int(header.split(".")[1]) for header in filtered_df.spectrum_id}
     pattern = re.compile(r"\[.*?\]")

@@ -39,6 +39,7 @@ parser.add_argument(
 )
 args = parser.parse_args().__dict__
 
+
 if __name__ == "__main__":
     filtered_df = duckdb.query(args["filter"].format(source=args["source"])).df()
 
@@ -47,7 +48,6 @@ if __name__ == "__main__":
     stripped_peptide_sequence_counts = Counter(
         pattern.sub("", pept) for pept in filtered_df.peptide
     )
-
     stats = {
         "proteins_in_protein_groups": len(
             {

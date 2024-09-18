@@ -5,7 +5,7 @@ Notice that they follow a template.
 Hence: in the future those functions will be dynamically created at runtime, either from snakemake rules or simply scripts used by those rules.
 """
 
-from snakemaketools.models import Node, db
+from snakemaketools.models import Node
 
 
 def cluster(raw_data: Node, config: Node) -> tuple[Node, Node, Node]:

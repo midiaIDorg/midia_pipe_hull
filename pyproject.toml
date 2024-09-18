@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools >= 64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name="midia_pipe_hull"
+version="0.0.1"
+description="Dependencies of the Snakemake pipeline."
+readme="README.md"
+authors=[
+    {name="Mateusz Krzysztof Łącki",email="matteo.lacki@gmail.com"},
+    {name="Michał Piotr Startek",email="michalsta@mimuw.edu.pl"},
+]
+dependencies = [
+    "csvkit",
+    "ipykernel",
+    "ipython",
+    "jupyter",
+    "jupyterlab",
+    "matplotlib",
+    "openpyxl",
+    "opentims_bruker_bridge",
+    "pandas",
+    "plotly",
+    "plotnine",
+    "pony",
+    "pymysql",
+    "pytest",
+    "seaborn",
+    "snakemake",
+    "virtualenvwrapper",
+    "pyqt5",
+    "ipympl",
+    "cowsay",
+    "UpSetPlot",
+    "duckdb",
+    "snakemaketools"
+]
+
+[project.urls]
+homepage="https://github.com/midiaIDorg/midia_pipe_hull.git"
+repository="https://github.com/midiaIDorg/midia_pipe_hull.git"

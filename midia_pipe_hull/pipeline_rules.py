@@ -199,59 +199,51 @@ def cluster_with_tims(
     )
 
 
-cluster_precursors_with_tims = partial(cluster_with_tims, level="precursor")
-cluster_fragments_with_tims = partial(cluster_with_tims, level="fragment")
+cluster_precursors_with_tims = partial(
+    cluster_with_tims,
+    level="precursor",
+)
+cluster_fragments_with_tims = partial(
+    cluster_with_tims,
+    level="fragment",
+)
 
 
 def postprocess_tims_clusters(
     clusters_hdf: Path,
+    level: str,
 ) -> tuple[Path, Path]:
-    return clusters, additional_cluster_stats
+    assert clusters_hdf.id != None
+    assert "clusters_hdf" in clusters_hdf.type
+    rule = RuleOrConfig.GETINSERT(
+        meta=dict(
+            inputs={
+                "dataset": dataset.id,
+            }
+        ),
+        type=f"postprocess_tims_{level}s_clusters",
+    )
+    postprocessed_clusters_hdf = Path.GETINSERT(
+        path=f"tmp/tims/postprocessed_{level}_tims_clusters/{rule.id}.startrek",
+        type=f"postprocessed_{level}_tims_clusters",
+        rule_or_config=rule,
+    )
+    additional_cluster_stats = Path.GETINSERT(
+        path=f"tmp/tims/postprocessed_{level}_tims_clusters/{rule.id}.parquet",
+        type=f"postprocessed_tims_additional_{level}_clusters_stats",
+        rule_or_config=rule,
+    )
+    return postprocessed_clusters_hdf, additional_cluster_stats
 
 
-def postprocess_precursor_tims_clusters(
-    precursor_clusters_hdf: Path,
-) -> tuple[Path, Path]:
-    return precursor_clusters, additional_precursor_cluster_stats
-
-
-def postprocess_fragments_tims_clusters(
-    fragment_clusters_hdf: Path,
-) -> tuple[Path, Path]:
-    return fragment_clusters, additional_fragment_cluster_stats
-
-
-# def cluster(
-#     raw_data: Path,
-#     config: Path,
-#     type: str,
-#     rule: str,
-# ) -> tuple[Path, Path, Path]:
-#     for arg in (raw_data, config):
-#         assert arg.id is not None
-
-#     rule = RuleOrConfig.GETINSERT(
-#         meta=dict(
-#             inputs={
-#                 "raw_data": raw_data.id,
-#                 "config": config.id,
-#             }
-#         ),
-#         type=type,
-#     )
-
-#     data = Path.GETINSERT(
-#         path=
-#         origin=_origin, type=type, extension=".startrek")
-#     stdout = Path.GETINSERT(origin=_origin, type="stdout", extension=".txt")
-#     stderr = Path.GETINSERT(origin=_origin, type="stderr", extension=".txt")
-
-#     return data, stdout, stderr
-
-
-# cluster_precursors = partial(cluster, type="precursor_clusters")
-# cluster_fragments = partial(cluster, type="fragment_clusters")
-
+postprocess_precursor_tims_clusters = partial(
+    postprocess_tims_clusters,
+    level="precursor",
+)
+postprocess_fragment_tims_clusters = partial(
+    postprocess_tims_clusters,
+    level="fragment",
+)
 
 # def get_cluster_stats(clusters: Path, config: Path) -> Path:
 #     for arg in (clusters, config):

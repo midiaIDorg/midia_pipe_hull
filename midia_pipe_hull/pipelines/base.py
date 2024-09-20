@@ -32,22 +32,26 @@ def pipeline(
 
     paths.fasta = register_fasta(fasta)
 
-    paths.dataset, paths.dataset_tdf, paths.dataset_tdf_bin = register_tdf_rawdata(
-        dataset
-    )
-    paths.dataset_analysis_tdf_hash = hash256(paths.dataset_tdf)
-    paths.dataset_analysis_tdf_bin_hash = hash256(paths.dataset_tdf_bin)
+    (
+        paths.dataset,
+        paths.dataset_analysis_tdf,
+        paths.dataset_analysis_tdf_bin,
+    ) = register_tdf_rawdata(dataset)
+    paths.dataset_analysis_tdf_hash = hash256(paths.dataset_analysis_tdf)
+    paths.dataset_analysis_tdf_bin_hash = hash256(paths.dataset_analysis_tdf_bin)
     paths.dataset_marginals_plots = raw_data_marginals_plots_folder(paths.dataset)
 
     if calibration:
         (
             paths.calibration,
-            paths.calibration_tdf,
-            paths.calibration_tdf_bin,
+            paths.calibration_analysis_tdf,
+            paths.calibration_analysis_tdf_bin,
         ) = register_tdf_rawdata(calibration)
 
-        paths.calibration_analysis_tdf_hash = hash256(paths.calibration_tdf)
-        paths.calibration_analysis_tdf_bin_hash = hash256(paths.calibration_tdf_bin)
+        paths.calibration_analysis_tdf_hash = hash256(paths.calibration_analysis_tdf)
+        paths.calibration_analysis_tdf_bin_hash = hash256(
+            paths.calibration_analysis_tdf_bin
+        )
 
         paths.dataset_matches_calibration_assertion = (
             report_if_dataset_and_calibration_comply(
@@ -64,17 +68,20 @@ def pipeline(
             paths.dataset,
             paths.dataset_analysis_tdf,
             paths.dataset_analysis_tdf_bin,
-        ) = remove_rawdata_baseline(
-            dataset=paths.dataset,
+        ) = remove_raw_data_baseline(
+            raw_data=paths.dataset,
             config=paths.baseline_removal_config,
         )
 
     if subconfigs["precursor_clustering_config"]["software"] == "tims":
+        tims_executable = get_tims_executable(
+            subconfig=subconfigs["precursor_clustering_config"]
+        )
         (
             paths.precursor_clusters_hdf,
-            paths.precursor_clustering_stdout,
-            paths.precursor_clustering_stderr,
+            paths.precursor_clustering_qc,
         ) = cluster_precursors_with_tims(
+            executable=tims_executable,
             dataset=paths.dataset,
             config=paths.precursor_clustering_config,
         )
@@ -82,16 +89,20 @@ def pipeline(
             paths.precursor_clusters,
             paths.additional_precursor_cluster_stats,
         ) = postprocess_fragment_tims_clusters(
+            executable=tims_executable,
             clusters_hdf=paths.precursor_clusters_hdf,
             analysis_tdf=paths.dataset_analysis_tdf,
         )
 
     if subconfigs["fragment_clustering_config"]["software"] == "tims":
+        tims_executable = get_tims_executable(
+            subconfig=subconfigs["precursor_clustering_config"]
+        )
         (
             paths.fragment_clusters_hdf,
-            paths.fragment_clustering_stdout,
-            paths.fragment_clustering_stderr,
+            paths.fragment_clustering_qc,
         ) = cluster_fragments_with_tims(
+            executable=tims_executable,
             dataset=paths.dataset,
             config=paths.fragment_clustering_config,
         )
@@ -99,6 +110,7 @@ def pipeline(
             paths.fragment_clusters,
             paths.additional_fragment_cluster_stats,
         ) = postprocess_fragment_tims_clusters(
+            executable=tims_executable,
             clusters_hdf=paths.fragment_clusters_hdf,
             analysis_tdf=paths.dataset_analysis_tdf,
         )

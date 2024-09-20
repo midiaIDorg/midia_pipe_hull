@@ -21,9 +21,9 @@ def assert_subconfig_is_valid(subconfig_type: str, subconfig: dict) -> None:
     ), f"Each subconfig must specify its extension, e.g. `.toml` or `.json` or `.config`.\nBut `{subconfig_type}` did not."
 
 
-def get_subconfig(subconfig_type: str, subconfig: dict) -> Path:
+def get_subconfig(subconfig_type: str, subconfig: dict, inputs: dict = {}) -> Path:
     config = RuleOrConfig.GETINSERT(
-        meta={"subconfig": subconfig, "inputs": {}},
+        meta={"subconfig": subconfig, "inputs": inputs},
         type=subconfig_type,
     )
     return Path.GETINSERT(
@@ -45,7 +45,7 @@ def register_tdf_rawdata(rawdata_tdf: str) -> tuple[Path, Path, Path]:
     )
     analysis_tdf = Path.GETINSERT(
         path=f"{folder_d.path}/analysis.tdf",
-        type="sqlite",
+        type="analysis_tdf",
         rule_or_config=rule,
     )
     analysis_tdf_bin = Path.GETINSERT(
@@ -76,14 +76,14 @@ def hash256(path: Path) -> Path:
         type="hash256",
     )
     hashfile = Path.GETINSERT(
-        path=f"tmp/hashes/{rule.id}.hash256",
+        path=f"tmp/hashes/{rule.id}.sha256",
         type="hash256",
         rule_or_config=rule,
     )
     return hashfile
 
 
-def remove_rawdata_baseline(
+def remove_raw_data_baseline(
     raw_data: Path,
     config: Path,
 ) -> tuple[Path, Path, Path]:
@@ -95,7 +95,7 @@ def remove_rawdata_baseline(
     rule = RuleOrConfig.GETINSERT(
         meta=dict(
             inputs={
-                "raw_data": raw_data.id,
+                "dataset": raw_data.id,
                 "config": config.id,
             }
         ),
@@ -108,7 +108,7 @@ def remove_rawdata_baseline(
     )
     analysis_tdf = Path.GETINSERT(
         path=f"{folder_d.path}/analysis.tdf",
-        type="sqlite",
+        type="analysis_tdf",
         rule_or_config=rule,
     )
     analysis_tdf_bin = Path.GETINSERT(
@@ -160,9 +160,22 @@ def raw_data_marginals_plots_folder(raw_data: Path) -> Path:
     return plots_of_marginal_distributions
 
 
-def cluster_with_tims(
-    dataset: Path, config: Path, level: str
-) -> tuple[Path, Path, Path]:
+# TODO: test this.
+def get_tims_executable(subconfig: dict) -> Path:
+    exe = f"software/{subconfig['software']}/{subconfig['version']}/{subconfig['executable']}"
+    rule = RuleOrConfig.GETINSERT(
+        meta=dict(inputs={"executable": exe}),
+        type=f"get_tims_executable",
+    )
+    tims_executable = Path.GETINSERT(
+        path=exe,
+        type=f"tims_executable",
+        rule_or_config=rule,
+    )
+    return tims_executable
+
+
+def cluster_with_tims(dataset: Path, config: Path, level: str) -> tuple[Path, Path]:
     assert dataset.id != None
     assert dataset.type == "raw_data"
     assert config.id != None
@@ -172,31 +185,23 @@ def cluster_with_tims(
         meta=dict(
             inputs={
                 "dataset": dataset.id,
+                "config": config.id,
             }
         ),
         type=f"cluster_{level}s_with_tims",
     )
-    precursor_clusters_hdf = Path.GETINSERT(
-        path=f"tmp/{level}_clusters/tims/{rule.id}.hdf",
+    clusters_hdf = Path.GETINSERT(
+        path=f"tmp/{level}_clusters/tims/{rule.id}/precursors.hdf",
         type=f"{level}_clusters_hdf",
         rule_or_config=rule,
     )
-    precursor_clustering_stdout = Path.GETINSERT(
-        path=f"tmp/{level}_clusters/tims/{rule.id}.stdout",
-        type=f"tims_{level}_clusters_stdout",
-        rule_or_config=rule,
-    )
-    precursor_clustering_stderr = Path.GETINSERT(
-        path=f"tmp/{level}_clusters/tims/{rule.id}.stderr",
-        type=f"tims_{level}_clusters_stderr",
+    clusters_qc = Path.GETINSERT(
+        path=f"tmp/{level}_clusters/tims/{rule.id}/qc",
+        type=f"tims_{level}_clusters_qc",
         rule_or_config=rule,
     )
 
-    return (
-        precursor_clusters_hdf,
-        precursor_clustering_stdout,
-        precursor_clustering_stderr,
-    )
+    return clusters_hdf, clusters_qc
 
 
 cluster_precursors_with_tims = partial(
@@ -211,15 +216,16 @@ cluster_fragments_with_tims = partial(
 
 def postprocess_tims_clusters(
     clusters_hdf: Path,
+    analysis_tdf: Path,
     level: str,
 ) -> tuple[Path, Path]:
     assert clusters_hdf.id != None
     assert "clusters_hdf" in clusters_hdf.type
+    assert analysis_tdf.id != None
+    assert analysis_tdf.type == "analysis_tdf"
     rule = RuleOrConfig.GETINSERT(
         meta=dict(
-            inputs={
-                "dataset": dataset.id,
-            }
+            inputs={"clusters_hdf": clusters_hdf.id, "analysis_tdf": analysis_tdf.id}
         ),
         type=f"postprocess_tims_{level}s_clusters",
     )

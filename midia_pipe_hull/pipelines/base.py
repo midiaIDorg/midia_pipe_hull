@@ -5,50 +5,66 @@ snakemaketools: general long snake capabilities.
 """
 from midia_pipe_hull.pipeline_rules import *
 from snakemaketools.datastructures import DotDict
-from snakemaketools.models import Node
+from snakemaketools.models import Path
 
 
 def pipeline(
-    raw_data: Node,
-    precursor_clustering_config: Node,
-    fragment_clustering_config: Node,
-    precursor_cluster_stats_config: Node,
-    fragment_cluster_stats_config: Node,
-    matching_config: Node,
+    subconfigs: dict,
+    dataset: str,
+    fasta: str,
     # defaults
-    config_baseline_removal: Node | None = None,  # not passed
+    calibration: str = "",  # "" == using Bruker windows
 ) -> DotDict:
-    N = DotDict(**locals())  # N stands for Nodes.
+    paths = DotDict()
+    register_subconfigs(paths, subconfigs)
 
-    if config_baseline_removal is not None:
-        N.raw_data = remove_rawdata_baseline(N.raw_data, N.config_baseline_removal)
-
+    paths.dataset, paths.dataset_tdf, paths.dataset_tdf_bin = register_tdf_rawdata(
+        dataset
+    )
     (
-        N.precursors,
-        N.precursor_clustering_stdout,
-        N.precursor_clustering_stderr,
-    ) = cluster_precursors(N.raw_data, N.precursor_clustering_config)
+        paths.calibration,
+        paths.calibration_tdf,
+        paths.calibration_tdf_bin,
+    ) = register_tdf_rawdata(calibration)
 
-    (
-        N.fragments,
-        N.fragment_clustering_stdout,
-        N.fragment_clustering_stderr,
-    ) = cluster_fragments(N.raw_data, N.fragment_clustering_config)
+    paths.fasta = register_fasta(fasta)
 
-    N.precursor_stats = get_cluster_stats(
-        N.precursors,
-        N.precursor_cluster_stats_config,
-    )
+    paths.dataset_analysis_tdf_hash = hash256(paths.dataset_tdf)
+    paths.dataset_analysis_tdf_bin_hash = hash256(paths.dataset_tdf_bin)
+    paths.calibration_analysis_tdf_hash = hash256(paths.calibration_tdf)
+    paths.calibration_analysis_tdf_bin_hash = hash256(paths.calibration_tdf_bin)
 
-    N.fragment_stats = get_cluster_stats(
-        N.fragments,
-        N.fragment_cluster_stats_config,
-    )
+    # if "config_baseline_removal" in subconfigs:
+    #     paths.dataset = remove_rawdata_baseline(
+    #         paths.dataset, paths.config_baseline_removal
+    #     )
 
-    N.rough_matches = match_precursors_and_fragments(
-        N.precursor_stats,
-        N.fragment_stats,
-        N.matching_config,
-    )
+    # (
+    #     paths.precursors,
+    #     paths.precursor_clustering_stdout,
+    #     paths.precursor_clustering_stderr,
+    # ) = cluster_precursors(paths.dataset, paths.precursor_clustering_config)
 
-    return N  # Nodes: paths ids.
+    # (
+    #     paths.fragments,
+    #     paths.fragment_clustering_stdout,
+    #     paths.fragment_clustering_stderr,
+    # ) = cluster_fragments(paths.dataset, paths.fragment_clustering_config)
+
+    # paths.precursor_stats = get_cluster_stats(
+    #     paths.precursors,
+    #     paths.precursor_cluster_stats_config,
+    # )
+
+    # paths.fragment_stats = get_cluster_stats(
+    #     paths.fragments,
+    #     paths.fragment_cluster_stats_config,
+    # )
+
+    # paths.rough_matches = match_precursors_and_fragments(
+    #     paths.precursor_stats,
+    #     paths.fragment_stats,
+    #     paths.matching_config,
+    # )
+
+    return paths

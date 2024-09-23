@@ -5,10 +5,9 @@ snakemaketools: general long snake capabilities.
 """
 from midia_pipe_hull.pipeline_rules import *
 from snakemaketools.datastructures import DotDict
-from snakemaketools.models import Path
 
 
-def pipeline(
+def fill_DB_with_paths(
     subconfigs: dict,
     dataset: str,
     fasta: str,
@@ -30,13 +29,14 @@ def pipeline(
             subconfig,
         )
 
-    paths.fasta = register_fasta(fasta)
+    paths.update(register_fasta(fasta))  # DotDicts all the way down
 
     (
         paths.dataset,
         paths.dataset_analysis_tdf,
         paths.dataset_analysis_tdf_bin,
     ) = register_tdf_rawdata(dataset)
+
     paths.dataset_analysis_tdf_hash = hash256(paths.dataset_analysis_tdf)
     paths.dataset_analysis_tdf_bin_hash = hash256(paths.dataset_analysis_tdf_bin)
     paths.dataset_marginals_plots = raw_data_marginals_plots_folder(paths.dataset)
@@ -73,7 +73,7 @@ def pipeline(
             config=paths.baseline_removal_config,
         )
 
-    if subconfigs["precursor_clustering_config"]["software"] == "tims":
+    if "tims" in subconfigs["precursor_clustering_config"]["software"]:
         tims_executable = get_tims_executable(
             subconfig=subconfigs["precursor_clustering_config"]
         )
@@ -89,12 +89,11 @@ def pipeline(
             paths.precursor_clusters,
             paths.additional_precursor_cluster_stats,
         ) = postprocess_fragment_tims_clusters(
-            executable=tims_executable,
             clusters_hdf=paths.precursor_clusters_hdf,
             analysis_tdf=paths.dataset_analysis_tdf,
         )
 
-    if subconfigs["fragment_clustering_config"]["software"] == "tims":
+    if "tims" in subconfigs["fragment_clustering_config"]["software"]:
         tims_executable = get_tims_executable(
             subconfig=subconfigs["precursor_clustering_config"]
         )
@@ -110,7 +109,6 @@ def pipeline(
             paths.fragment_clusters,
             paths.additional_fragment_cluster_stats,
         ) = postprocess_fragment_tims_clusters(
-            executable=tims_executable,
             clusters_hdf=paths.fragment_clusters_hdf,
             analysis_tdf=paths.dataset_analysis_tdf,
         )

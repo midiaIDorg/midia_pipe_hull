@@ -7,7 +7,7 @@ Hence: in the future those functions will be dynamically created at runtime, eit
 
 from functools import partial
 
-from snakemaketools.models import Path, RuleOrConfig
+from snakemaketools.models import Path, RuleOrConfig, add_rule_and_paths_to_DB
 
 # for subconfig_type, subconfig in subconfigs.items():
 
@@ -21,11 +21,15 @@ def assert_subconfig_is_valid(subconfig_type: str, subconfig: dict) -> None:
     ), f"Each subconfig must specify its extension, e.g. `.toml` or `.json` or `.config`.\nBut `{subconfig_type}` did not."
 
 
+# why do I need to keep the ids? It will be more useful to directly keep paths.
+
+
 def get_subconfig(subconfig_type: str, subconfig: dict, inputs: dict = {}) -> Path:
     config = RuleOrConfig.GETINSERT(
         meta={"subconfig": subconfig, "inputs": inputs},
         type=subconfig_type,
     )
+
     return Path.GETINSERT(
         path=f"tmp/configs/{subconfig_type}/{config.id}{subconfig['extension']}",
         type=subconfig_type,
@@ -175,7 +179,12 @@ def get_tims_executable(subconfig: dict) -> Path:
     return tims_executable
 
 
-def cluster_with_tims(dataset: Path, config: Path, level: str) -> tuple[Path, Path]:
+def cluster_with_tims(
+    dataset: Path,
+    config: Path,
+    executable: Path,
+    level: str,
+) -> tuple[Path, Path]:
     assert dataset.id != None
     assert dataset.type == "raw_data"
     assert config.id != None
@@ -186,7 +195,9 @@ def cluster_with_tims(dataset: Path, config: Path, level: str) -> tuple[Path, Pa
             inputs={
                 "dataset": dataset.id,
                 "config": config.id,
-            }
+                "executable": executable.id,
+            },
+            level="level",
         ),
         type=f"cluster_{level}s_with_tims",
     )

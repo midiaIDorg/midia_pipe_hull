@@ -7,7 +7,7 @@ from midia_pipe_hull.pipeline_rules import *
 from snakemaketools.datastructures import DotDict
 
 
-def fill_DB_with_paths(
+def get_pipeline_paths(
     subconfigs: dict,
     dataset: str,
     fasta: str,

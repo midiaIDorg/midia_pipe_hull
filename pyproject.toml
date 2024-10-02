@@ -12,30 +12,34 @@ authors=[
     {name="Michał Piotr Startek",email="michalsta@mimuw.edu.pl"},
 ]
 dependencies = [
-    "csvkit",
-    "ipykernel",
-    "ipython",
-    "jupyter",
-    "jupyterlab",
-    "matplotlib",
-    "openpyxl",
-    "opentims_bruker_bridge",
-    "pandas",
-    "plotly",
-    "plotnine",
-    "pony",
-    "pymysql",
-    "pytest",
-    "seaborn",
-    "snakemake",
-    "virtualenvwrapper",
-    "pyqt5",
-    "ipympl",
-    "cowsay",
-    "UpSetPlot",
-    "duckdb",
-    "snakemaketools"
+    # "csvkit",
+    # "ipykernel",
+    # "ipython",
+    # "jupyter",
+    # "jupyterlab",
+    # "matplotlib",
+    # "openpyxl",
+    # "opentims_bruker_bridge",
+    # "pandas",
+    # "plotly",
+    # "plotnine",
+    # "pony",
+    # "pymysql",
+    # "pytest",
+    # "seaborn",
+    # "snakemake",
+    # "virtualenvwrapper",
+    # "pyqt5",
+    # "ipympl",
+    # "cowsay",
+    # "UpSetPlot",
+    # "duckdb",
+    # "snakemaketools",
+    "toml",
 ]
+
+[project.scripts]
+write_config = "tools.write_config:main"
 
 [project.urls]
 homepage="https://github.com/midiaIDorg/midia_pipe_hull.git"

@@ -7,7 +7,7 @@ Hence: in the future those functions will be dynamically created at runtime, eit
 
 from functools import partial
 
-from snakemaketools.models import Path, RuleOrConfig, add_rule_and_paths_to_DB
+from snakemaketools.models import Path, RuleOrConfig
 
 # for subconfig_type, subconfig in subconfigs.items():
 

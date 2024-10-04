@@ -3,130 +3,158 @@ I guess we can assume that pipelines will be simply importable functions.
 
 snakemaketools: general long snake capabilities.
 """
-from midia_pipe_hull.pipeline_rules import *
 from snakemaketools.datastructures import DotDict
 
 
-def get_pipeline_paths(
-    subconfigs: dict,
+def get_nodes(
+    rules: DotDict,
+    configs: DotDict,
     dataset: str,
     fasta: str,
-    # defaults
     calibration: str = "",  # "" == using Bruker windows
 ) -> DotDict:
     """
     Remember that here we only register paths in the DB.
     That does not automatically mean that all of these paths will ever be created.
     """
-    paths = DotDict()
+    nodes = DotDict()
 
-    for subconfig_type, subconfig in subconfigs.items():
-        assert_subconfig_is_valid(subconfig_type, subconfig)
-
-    for subconfig_type, subconfig in subconfigs.items():
-        paths[subconfig_type] = get_subconfig(
-            subconfig_type,
-            subconfig,
-        )
-
-    paths.update(register_fasta(fasta))  # DotDicts all the way down
+    nodes.fasta = rules.set_fasta()
 
     (
-        paths.dataset,
-        paths.dataset_analysis_tdf,
-        paths.dataset_analysis_tdf_bin,
-    ) = register_tdf_rawdata(dataset)
+        nodes.dataset,
+        nodes.dataset_analysis_tdf,
+        nodes.dataset_analysis_tdf_bin,
+    ) = rules.set_dataset()
 
-    paths.dataset_analysis_tdf_hash = hash256(paths.dataset_analysis_tdf)
-    paths.dataset_analysis_tdf_bin_hash = hash256(paths.dataset_analysis_tdf_bin)
-    paths.dataset_marginals_plots = raw_data_marginals_plots_folder(paths.dataset)
+    nodes.dataset_analysis_tdf_hash = rules.hash256(path=nodes.dataset_analysis_tdf)
+    nodes.dataset_analysis_tdf_bin_hash = rules.hash256(
+        path=nodes.dataset_analysis_tdf_bin
+    )
+    nodes.dataset_marginal_distributions = rules.get_marginal_distribution_of_raw_data(
+        raw_data=nodes.dataset
+    )
 
     if calibration:
         (
-            paths.calibration,
-            paths.calibration_analysis_tdf,
-            paths.calibration_analysis_tdf_bin,
-        ) = register_tdf_rawdata(calibration)
+            nodes.calibration,
+            nodes.calibration_analysis_tdf,
+            nodes.calibration_analysis_tdf_bin,
+        ) = rules.set_calibration()
 
-        paths.calibration_analysis_tdf_hash = hash256(paths.calibration_analysis_tdf)
-        paths.calibration_analysis_tdf_bin_hash = hash256(
-            paths.calibration_analysis_tdf_bin
+        nodes.calibration_analysis_tdf_hash = rules.hash256(
+            path=nodes.calibration_analysis_tdf
+        )
+        nodes.calibration_analysis_tdf_bin_hash = rules.hash256(
+            path=nodes.calibration_analysis_tdf_bin
         )
 
-        paths.dataset_matches_calibration_assertion = (
-            report_if_dataset_and_calibration_comply(
-                dataset=paths.dataset,
-                calibration=paths.calibration,
+        nodes.dataset_matches_calibration_assertion = (
+            rules.report_if_dataset_and_calibration_comply(
+                dataset=nodes.dataset,
+                calibration=nodes.calibration,
             )
         )
-        paths.calibration_marginals_plots = raw_data_marginals_plots_folder(
-            paths.calibration
+        nodes.calibration_marginal_distributions = (
+            rules.get_marginal_distribution_of_raw_data(raw_data=nodes.calibration)
         )
 
-    if "baseline_removal_config" in subconfigs:
-        (
-            paths.dataset,
-            paths.dataset_analysis_tdf,
-            paths.dataset_analysis_tdf_bin,
-        ) = remove_raw_data_baseline(
-            raw_data=paths.dataset,
-            config=paths.baseline_removal_config,
-        )
-
-    if "tims" in subconfigs["precursor_clustering_config"]["software"]:
-        tims_executable = get_tims_executable(
-            subconfig=subconfigs["precursor_clustering_config"]
+    if "baseline_removal" in configs:
+        nodes.baseline_removal_config = rules.baseline_removal_config.set(
+            configs.baseline_removal
         )
         (
-            paths.precursor_clusters_hdf,
-            paths.precursor_clustering_qc,
-        ) = cluster_precursors_with_tims(
-            executable=tims_executable,
-            dataset=paths.dataset,
-            config=paths.precursor_clustering_config,
-        )
-        (
-            paths.precursor_clusters,
-            paths.additional_precursor_cluster_stats,
-        ) = postprocess_fragment_tims_clusters(
-            clusters_hdf=paths.precursor_clusters_hdf,
-            analysis_tdf=paths.dataset_analysis_tdf,
+            nodes.dataset,
+            nodes.dataset_analysis_tdf,
+            nodes.dataset_analysis_tdf_bin,
+        ) = rules.remove_raw_data_baseline(
+            raw_data=nodes.dataset,
+            config=nodes.baseline_removal_config,
         )
 
-    if "tims" in subconfigs["fragment_clustering_config"]["software"]:
-        tims_executable = get_tims_executable(
-            subconfig=subconfigs["precursor_clustering_config"]
+    if "tims_precursor_clusterer" in configs:
+        nodes.tims_precursor_clusterer = rules.tims_precursor_clusterer.set(
+            config=configs.tims_precursor_clusterer
         )
-        (
-            paths.fragment_clusters_hdf,
-            paths.fragment_clustering_qc,
-        ) = cluster_fragments_with_tims(
-            executable=tims_executable,
-            dataset=paths.dataset,
-            config=paths.fragment_clustering_config,
+        if "tims_precursor_clusterer_config" in configs:
+            nodes.tims_precursor_clusterer_config = (
+                rules.tims_precursor_clusterer_config.set(
+                    configs.tims_precursor_clusterer_config,
+                )
+            )
+            (
+                nodes.precursor_clusters_hdf,
+                nodes.precursor_clustering_qc,
+                nodes.additional_precursor_cluster_stats,
+            ) = rules.tims_cluster_precursors(
+                dataset=nodes.dataset,
+                config=nodes.tims_precursor_clusterer_config,
+                executable=nodes.tims_precursor_clusterer,
+            )
+            nodes.precursor_clusters = rules.postprocess_tims_precursor_clusters(
+                clusters_hdf=nodes.precursor_clusters_hdf,
+                analysis_tdf=nodes.dataset_analysis_tdf,
+            )
+
+    if "tims_fragment_clusterer" in configs:
+        nodes.tims_fragment_clusterer = rules.tims_fragment_clusterer.set(
+            config=configs.tims_fragment_clusterer
         )
-        (
-            paths.fragment_clusters,
-            paths.additional_fragment_cluster_stats,
-        ) = postprocess_fragment_tims_clusters(
-            clusters_hdf=paths.fragment_clusters_hdf,
-            analysis_tdf=paths.dataset_analysis_tdf,
+        if "tims_fragment_clusterer_config" in configs:
+            nodes.tims_fragment_clusterer_config = (
+                rules.tims_fragment_clusterer_config.set(
+                    configs.tims_fragment_clusterer_config
+                )
+            )
+            (
+                nodes.fragment_clusters_hdf,
+                nodes.fragment_clustering_qc,
+                nodes.additional_fragment_cluster_stats,
+            ) = rules.tims_cluster_fragments(
+                dataset=nodes.dataset,
+                config=nodes.tims_fragment_clusterer_config,
+                executable=nodes.tims_fragment_clusterer,
+            )
+            nodes.fragment_clusters = rules.postprocess_tims_fragment_clusters(
+                clusters_hdf=nodes.fragment_clusters_hdf,
+                analysis_tdf=nodes.dataset_analysis_tdf,
+            )
+
+    nodes.precursor_cluster_stats_config = rules.precursor_cluster_stats_config.set(
+        configs.precursor_cluster_stats_config
+    )
+    nodes.precursor_cluster_stats = rules.get_precursor_cluster_stats(
+        clusters=nodes.precursor_clusters,
+        config=nodes.precursor_cluster_stats_config,
+    )
+
+    # TODO: this is missing in the pipeline
+    # TODO: variadic types should be included together with general types later on.
+    if "tims_additional_precursor_cluster_stats" in nodes:
+        nodes.precursor_cluster_stats = rules.merge_additional_tims_precursor_stats(
+            cluster_stats=nodes.precursor_cluster_stats,
+            additional_stats=nodes.additional_precursor_cluster_stats,
         )
 
-    # paths.precursor_stats = get_cluster_stats(
-    #     precursor_clusters=paths.precursors,
-    #     paths.precursor_cluster_stats_config,
-    # )
+    nodes.fragment_cluster_stats_config = rules.fragment_cluster_stats_config.set(
+        configs.fragment_cluster_stats_config
+    )
+    nodes.fragment_cluster_stats = rules.get_fragment_cluster_stats(
+        clusters=nodes.fragment_clusters,
+        config=nodes.fragment_cluster_stats_config,
+    )
 
-    # paths.fragment_stats = get_cluster_stats(
-    #     paths.fragments,
-    #     paths.fragment_cluster_stats_config,
-    # )
+    if "tims_additional_fragment_cluster_stats" in nodes:
+        nodes.fragment_cluster_stats = rules.merge_additional_tims_fragment_stats(
+            cluster_stats=nodes.fragment_cluster_stats,
+            additional_stats=nodes.additional_fragment_cluster_stats,
+        )
 
-    # paths.rough_matches = match_precursors_and_fragments(
-    #     paths.precursor_stats,
-    #     paths.fragment_stats,
-    #     paths.matching_config,
-    # )
+    nodes.matching_config = rules.matching_config.set(configs.matching_config)
+    nodes.rough_matches = rules.match_precursors_and_fragments(
+        nodes.precursor_cluster_stats,
+        nodes.fragment_cluster_stats,
+        nodes.matching_config,
+    )
 
-    return paths
+    return nodes

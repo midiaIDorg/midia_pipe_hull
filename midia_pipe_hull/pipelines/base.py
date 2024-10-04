@@ -128,8 +128,6 @@ def get_nodes(
         config=nodes.precursor_cluster_stats_config,
     )
 
-    # TODO: this is missing in the pipeline
-    # TODO: variadic types should be included together with general types later on.
     if "tims_additional_precursor_cluster_stats" in nodes:
         nodes.precursor_cluster_stats = rules.merge_additional_tims_precursor_stats(
             cluster_stats=nodes.precursor_cluster_stats,
@@ -152,9 +150,9 @@ def get_nodes(
 
     nodes.matching_config = rules.matching_config.set(configs.matching_config)
     nodes.rough_matches = rules.match_precursors_and_fragments(
-        nodes.precursor_cluster_stats,
-        nodes.fragment_cluster_stats,
-        nodes.matching_config,
+        precursor_cluster_stats=nodes.precursor_cluster_stats,
+        fragment_cluster_stats=nodes.fragment_cluster_stats,
+        matching_config=nodes.matching_config,
     )
 
     return nodes

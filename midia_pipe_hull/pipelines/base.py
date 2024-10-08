@@ -9,9 +9,7 @@ from snakemaketools.datastructures import DotDict
 def get_nodes(
     rules: DotDict,
     configs: DotDict,
-    dataset: str,
-    fasta: str,
-    calibration: str = "",  # "" == using Bruker windows
+    wildcards: DotDict,
 ) -> DotDict:
     """
     Remember that here we only register paths in the DB.
@@ -19,13 +17,13 @@ def get_nodes(
     """
     nodes = DotDict()
 
-    nodes.fasta = rules.set_fasta()
+    nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
 
     (
         nodes.dataset,
         nodes.dataset_analysis_tdf,
         nodes.dataset_analysis_tdf_bin,
-    ) = rules.set_dataset()
+    ) = rules.fetch_data(folder_d=wildcards.dataset)
 
     nodes.dataset_analysis_tdf_hash = rules.hash256(path=nodes.dataset_analysis_tdf)
     nodes.dataset_analysis_tdf_bin_hash = rules.hash256(
@@ -35,12 +33,12 @@ def get_nodes(
         raw_data=nodes.dataset
     )
 
-    if calibration:
+    if "calibration" in wildcards:
         (
             nodes.calibration,
             nodes.calibration_analysis_tdf,
             nodes.calibration_analysis_tdf_bin,
-        ) = rules.set_calibration()
+        ) = rules.fetch_data(folder_d=wildcards.calibration)
 
         nodes.calibration_analysis_tdf_hash = rules.hash256(
             path=nodes.calibration_analysis_tdf
@@ -51,8 +49,8 @@ def get_nodes(
 
         nodes.dataset_matches_calibration_assertion = (
             rules.report_if_dataset_and_calibration_comply(
-                dataset=nodes.dataset,
-                calibration=nodes.calibration,
+                dataset_analysis_tdf=nodes.dataset_analysis_tdf,
+                calibration_analysis_tdf=nodes.calibration_analysis_tdf,
             )
         )
         nodes.calibration_marginal_distributions = (
@@ -72,53 +70,53 @@ def get_nodes(
             config=nodes.baseline_removal_config,
         )
 
-    if "tims_precursor_clusterer" in configs:
-        nodes.tims_precursor_clusterer = rules.tims_precursor_clusterer.set(
-            config=configs.tims_precursor_clusterer
+    if "tims-clustering-cmdline" in wildcards.precursor_clusterer:
+        nodes.tims_precursor_clusterer = rules.install_tims(
+            path=wildcards.precursor_clusterer
         )
-        if "tims_precursor_clusterer_config" in configs:
-            nodes.tims_precursor_clusterer_config = (
-                rules.tims_precursor_clusterer_config.set(
-                    configs.tims_precursor_clusterer_config,
-                )
+        nodes.tims_precursor_clusterer_config = (
+            rules.tims_precursor_clusterer_config.set(
+                configs.precursor_clusterer_config,
             )
-            (
-                nodes.precursor_clusters_hdf,
-                nodes.precursor_clustering_qc,
-                nodes.additional_precursor_cluster_stats,
-            ) = rules.tims_cluster_precursors(
-                dataset=nodes.dataset,
-                config=nodes.tims_precursor_clusterer_config,
-                executable=nodes.tims_precursor_clusterer,
-            )
-            nodes.precursor_clusters = rules.postprocess_tims_precursor_clusters(
-                clusters_hdf=nodes.precursor_clusters_hdf,
-                analysis_tdf=nodes.dataset_analysis_tdf,
-            )
+        )
+        (
+            nodes.precursor_clusters_hdf,
+            nodes.precursor_clustering_qc,
+        ) = rules.tims_cluster_precursors(
+            dataset=nodes.dataset,
+            config=nodes.tims_precursor_clusterer_config,
+            executable=nodes.tims_precursor_clusterer,
+        )
+        (
+            nodes.precursor_clusters,
+            nodes.additional_precursor_cluster_stats,
+        ) = rules.postprocess_tims_precursor_clusters(
+            clusters_hdf=nodes.precursor_clusters_hdf,
+            analysis_tdf=nodes.dataset_analysis_tdf,
+        )
 
-    if "tims_fragment_clusterer" in configs:
-        nodes.tims_fragment_clusterer = rules.tims_fragment_clusterer.set(
-            config=configs.tims_fragment_clusterer
+    if "tims-clustering-cmdline" in wildcards.fragment_clusterer:
+        nodes.tims_fragment_clusterer = rules.install_tims(
+            path=wildcards.fragment_clusterer
         )
-        if "tims_fragment_clusterer_config" in configs:
-            nodes.tims_fragment_clusterer_config = (
-                rules.tims_fragment_clusterer_config.set(
-                    configs.tims_fragment_clusterer_config
-                )
-            )
-            (
-                nodes.fragment_clusters_hdf,
-                nodes.fragment_clustering_qc,
-                nodes.additional_fragment_cluster_stats,
-            ) = rules.tims_cluster_fragments(
-                dataset=nodes.dataset,
-                config=nodes.tims_fragment_clusterer_config,
-                executable=nodes.tims_fragment_clusterer,
-            )
-            nodes.fragment_clusters = rules.postprocess_tims_fragment_clusters(
-                clusters_hdf=nodes.fragment_clusters_hdf,
-                analysis_tdf=nodes.dataset_analysis_tdf,
-            )
+        nodes.tims_fragment_clusterer_config = rules.tims_fragment_clusterer_config.set(
+            configs.fragment_clusterer_config
+        )
+        (
+            nodes.fragment_clusters_hdf,
+            nodes.fragment_clustering_qc,
+        ) = rules.tims_cluster_fragments(
+            dataset=nodes.dataset,
+            config=nodes.tims_fragment_clusterer_config,
+            executable=nodes.tims_fragment_clusterer,
+        )
+        (
+            nodes.fragment_clusters,
+            nodes.additional_fragment_cluster_stats,
+        ) = rules.postprocess_tims_fragment_clusters(
+            clusters_hdf=nodes.fragment_clusters_hdf,
+            analysis_tdf=nodes.dataset_analysis_tdf,
+        )
 
     nodes.precursor_cluster_stats_config = rules.precursor_cluster_stats_config.set(
         configs.precursor_cluster_stats_config

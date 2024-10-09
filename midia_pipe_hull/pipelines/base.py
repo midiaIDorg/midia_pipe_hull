@@ -70,7 +70,7 @@ def get_nodes(
             config=nodes.baseline_removal_config,
         )
 
-    if "tims-clustering-cmdline" in wildcards.precursor_clusterer:
+    if "tims-clustering-cmdline" in wildcards.precursor_clusterer.value:
         nodes.tims_precursor_clusterer = rules.install_tims(
             path=wildcards.precursor_clusterer
         )
@@ -95,7 +95,7 @@ def get_nodes(
             analysis_tdf=nodes.dataset_analysis_tdf,
         )
 
-    if "tims-clustering-cmdline" in wildcards.fragment_clusterer:
+    if "tims-clustering-cmdline" in wildcards.fragment_clusterer.value:
         nodes.tims_fragment_clusterer = rules.install_tims(
             path=wildcards.fragment_clusterer
         )

@@ -2,6 +2,12 @@
 
 This package controls the installation of midiaID snakemake workflow.
 
+## Pipeline installation:
+
+Download the zip file [here](./midiaID_2024_08_04_november_rain_clean_dockerhub.zip).
+Unzip it. 
+Follow instructions in README from the unzipped folder.
+
 ## LICENSE
 
 [License for `midia_pipe_hull`.](./LICENSE)

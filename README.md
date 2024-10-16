@@ -14,3 +14,4 @@ Follow instructions in README from the unzipped folder.
 
 [Bruker's EULA for using 4DFF clustering algorithm.](./EULA_4DFF.pdf) [And licenses of dependencies of the 4DFF algorithm.](./BRUKER_THIRD-PARTY-LICENSE-README.txt)
 
+The SAGE fork used in the pipeline is MIT-licensed, as mentioned in the prepared image in folders containing it at its different versions.

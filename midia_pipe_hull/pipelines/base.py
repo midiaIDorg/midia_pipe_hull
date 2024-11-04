@@ -3,19 +3,22 @@ I guess we can assume that pipelines will be simply importable functions.
 
 snakemaketools: general long snake capabilities.
 """
+import snakemaketools.rules
 from snakemaketools.datastructures import DotDict
+
+# import Config, Node, Rule, Wildcard
 
 
 def get_nodes(
-    rules: DotDict,
-    configs: DotDict,
-    wildcards: DotDict,
-) -> DotDict:
+    rules: DotDict[str, snakemaketools.rules.Rule],
+    configs: DotDict[str, snakemaketools.rules.Config],
+    wildcards: DotDict[str, snakemaketools.rules.Wildcard],
+) -> DotDict[str, snakemaketools.rules.Node]:
     """
     Remember that here we only register paths in the DB.
     That does not automatically mean that all of these paths will ever be created.
     """
-    nodes = DotDict()
+    nodes: DotDict[str, snakemaketools.rules.Node] = DotDict()
 
     nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
 
@@ -29,7 +32,7 @@ def get_nodes(
     nodes.dataset_analysis_tdf_bin_hash = rules.hash256(
         path=nodes.dataset_analysis_tdf_bin
     )
-    nodes.dataset_marginal_distributions = rules.get_marginal_distribution_of_raw_data(
+    nodes.dataset_marginal_distribution_plots = rules.get_marginal_distribution_plots(
         raw_data=nodes.dataset
     )
 
@@ -54,13 +57,16 @@ def get_nodes(
             )
         )
         nodes.calibration_marginal_distributions = (
-            rules.get_marginal_distribution_of_raw_data(raw_data=nodes.calibration)
+            rules.get_marginal_distribution_plots(raw_data=nodes.calibration)
         )
 
     if "baseline_removal" in configs:
-        nodes.baseline_removal_config = rules.baseline_removal_config.set(
-            configs.baseline_removal
+        # TO THINK: do we actually need to use the `set` method?
+        # No, likely need one method in the pipeline to set the configs.
+        nodes.baseline_removal_config = rules.get_config_from_db_into_file_system(
+            config=configs.baseline_removal
         )
+
         (
             nodes.dataset,
             nodes.dataset_analysis_tdf,
@@ -70,45 +76,51 @@ def get_nodes(
             config=nodes.baseline_removal_config,
         )
 
-    if "tims-clustering-cmdline" in wildcards.precursor_clusterer.value:
-        nodes.tims_precursor_clusterer = rules.install_tims(
-            path=wildcards.precursor_clusterer
-        )
+    if configs.precursor_clusterer.location_wildcards.software == "tims":
         nodes.tims_precursor_clusterer_config = (
-            rules.tims_precursor_clusterer_config.set(
-                configs.precursor_clusterer_config,
+            rules.get_config_from_db_into_file_system(
+                config=configs.precursor_clusterer
             )
         )
+
+        _level = snakemaketools.rules.Wildcard(name="level", value="precursor")
+        _version = configs.precursor_clusterer.location_wildcards.version
         (
             nodes.precursor_clusters_hdf,
-            nodes.precursor_clustering_qc,
-        ) = rules.tims_cluster_precursors(
+            nodes.precursor_clustering_stdout,
+            nodes.precursor_clustering_stderr,
+        ) = rules.cluster_with_tims(
             dataset=nodes.dataset,
             config=nodes.tims_precursor_clusterer_config,
-            executable=nodes.tims_precursor_clusterer,
+            level=_level,
+            version=_version,
         )
         (
             nodes.precursor_clusters,
             nodes.additional_precursor_cluster_stats,
-        ) = rules.postprocess_tims_precursor_clusters(
+        ) = rules.postprocess_precursor_tims_clusters(
             clusters_hdf=nodes.precursor_clusters_hdf,
             analysis_tdf=nodes.dataset_analysis_tdf,
+            level=_level,
+            version=_version,
         )
 
-    if "tims-clustering-cmdline" in wildcards.fragment_clusterer.value:
-        nodes.tims_fragment_clusterer = rules.install_tims(
-            path=wildcards.fragment_clusterer
-        )
-        nodes.tims_fragment_clusterer_config = rules.tims_fragment_clusterer_config.set(
-            configs.fragment_clusterer_config
-        )
+    if configs.fragment_clusterer.location_wildcards.software == "tims":
+        nodes.tims_fragment_clusterer_config = (
+            nodes.tims_precursor_clusterer_config
+        ) = rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
+
+        _level = snakemaketools.rules.Wildcard(name="level", value="fragment")
+        _version = configs.fragment_clusterer.location_wildcards.version
         (
             nodes.fragment_clusters_hdf,
-            nodes.fragment_clustering_qc,
-        ) = rules.tims_cluster_fragments(
+            nodes.fragment_clustering_stdout,
+            nodes.fragment_clustering_stderr,
+        ) = rules.cluster_with_tims(
             dataset=nodes.dataset,
             config=nodes.tims_fragment_clusterer_config,
-            executable=nodes.tims_fragment_clusterer,
+            level=_level,
+            version=_version,
         )
         (
             nodes.fragment_clusters,
@@ -116,10 +128,12 @@ def get_nodes(
         ) = rules.postprocess_tims_fragment_clusters(
             clusters_hdf=nodes.fragment_clusters_hdf,
             analysis_tdf=nodes.dataset_analysis_tdf,
+            level=_level,
+            version=_version,
         )
 
-    nodes.precursor_cluster_stats_config = rules.precursor_cluster_stats_config.set(
-        configs.precursor_cluster_stats_config
+    nodes.precursor_cluster_stats_config = rules.get_config_from_db_into_file_system(
+        config=configs.precursor_cluster_stats_config
     )
     nodes.precursor_cluster_stats = rules.get_precursor_cluster_stats(
         clusters=nodes.precursor_clusters,
@@ -132,8 +146,8 @@ def get_nodes(
             additional_stats=nodes.additional_precursor_cluster_stats,
         )
 
-    nodes.fragment_cluster_stats_config = rules.fragment_cluster_stats_config.set(
-        configs.fragment_cluster_stats_config
+    nodes.fragment_cluster_stats_config = rules.get_config_from_db_into_file_system(
+        config=configs.fragment_cluster_stats_config
     )
     nodes.fragment_cluster_stats = rules.get_fragment_cluster_stats(
         clusters=nodes.fragment_clusters,

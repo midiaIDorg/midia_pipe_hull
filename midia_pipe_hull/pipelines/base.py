@@ -345,6 +345,6 @@ def get_nodes(
             config=nodes.map_back_sage_results_unto_peptide_fragment_graph_config,
         )
 
-    # rules.run_compomics_rescoring(sage_results_tsv = , mgf = , fasta = , config = , executable = , search_config = )
+    # rules.run_compomics_rescoring(sage_results_tsv = , mgf = , fasta = , config = , search_config = )
 
     return nodes

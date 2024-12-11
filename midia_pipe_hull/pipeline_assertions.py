@@ -13,7 +13,7 @@ def get_scheme(path):
 @click.command(context_settings={"show_default": True})
 @click.argument("dataset_analysis_tdf")
 @click.argument("calibration_analysis_tdf")
-@click.argument("output")
+@click.argument("report_output")
 def assert_dataset_and_calibration_comply(
     dataset_analysis_tdf: str,
     calibration_analysis_tdf: str,

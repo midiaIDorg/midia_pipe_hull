@@ -6,9 +6,8 @@ snakemaketools: general long snake capabilities.
 import snakemaketools.rules
 from snakemaketools.datastructures import DotDict
 
-# import Config, Node, Rule, Wildcard
 
-
+# TODO: move sagepy out of here into a separate pipeline.
 def get_nodes(
     rules: DotDict[str, snakemaketools.rules.Rule],
     configs: DotDict[str, snakemaketools.rules.Config],
@@ -37,20 +36,24 @@ def get_nodes(
     )
     nodes.memmapped_dataset = rules.memmap_data(folder_d=nodes.dataset)
 
-    if "calibration" in wildcards and wildcards.calibration.value is not None:
-        (
-            nodes.calibration,
-            nodes.calibration_analysis_tdf,
-            nodes.calibration_analysis_tdf_bin,
-        ) = rules.fetch_data(folder_d=wildcards.calibration)
+    # nodes.calibration_results = snakemaketools.rules.Node(location="None")
+    (
+        nodes.calibration,
+        nodes.calibration_analysis_tdf,
+        nodes.calibration_analysis_tdf_bin,
+    ) = rules.fetch_data(folder_d=wildcards.calibration)
+    nodes.calibration_analysis_tdf_hash = rules.hash256(
+        path=nodes.calibration_analysis_tdf
+    )
+    nodes.calibration_analysis_tdf_bin_hash = rules.hash256(
+        path=nodes.calibration_analysis_tdf_bin
+    )
 
-        nodes.calibration_analysis_tdf_hash = rules.hash256(
-            path=nodes.calibration_analysis_tdf
-        )
-        nodes.calibration_analysis_tdf_bin_hash = rules.hash256(
-            path=nodes.calibration_analysis_tdf_bin
-        )
-
+    nodes.calibration_results = snakemaketools.rules.Node(location="none")
+    nodes.dataset_matches_calibration_assertion = snakemaketools.rules.Node(
+        location="none"
+    )
+    if not "None.d" in nodes.calibration.location:
         nodes.dataset_matches_calibration_assertion = (
             rules.report_if_dataset_and_calibration_comply(
                 dataset_analysis_tdf=nodes.dataset_analysis_tdf,
@@ -60,9 +63,7 @@ def get_nodes(
         nodes.calibration_marginal_distributions = (
             rules.get_marginal_distribution_plots(raw_data=nodes.calibration)
         )
-
         nodes.memmapped_calibration = rules.memmap_data(folder_d=nodes.calibration)
-
         nodes.calibration_results = rules.precompute_calibration(
             calibration=nodes.calibration,
             memmapped_calibration=nodes.memmapped_calibration,

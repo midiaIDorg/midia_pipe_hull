@@ -20,6 +20,7 @@ def get_nodes(
     nodes: DotDict[str, snakemaketools.rules.Node] = DotDict()
 
     nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
+    nodes.fasta_stats = rules.summarize_fasta(fasta=nodes.fasta)
 
     (
         nodes.dataset,

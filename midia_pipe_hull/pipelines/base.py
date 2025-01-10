@@ -73,6 +73,7 @@ def get_nodes(
     if "baseline_removal" in configs:
         # TO THINK: do we actually need to use the `set` method?
         # No, likely need one method in the pipeline to set the configs.
+        # TODO: if anything: this should rather work on .startrek formatted data.
         nodes.baseline_removal_config = rules.get_config_from_db_into_file_system(
             config=configs.baseline_removal
         )
@@ -169,11 +170,13 @@ def get_nodes(
     nodes.precursor_cluster_stats = rules.get_cluster_stats(
         clusters_startrek=nodes.precursor_clusters
     )
+
     # TODO: optimization: instead of .parquet, use .startrek
     nodes.fragment_cluster_stats = rules.get_cluster_stats(
         clusters_startrek=nodes.fragment_clusters
     )
 
+    # predicting precursors
     nodes.precursor_prediction_config = rules.get_config_from_db_into_file_system(
         config=configs.precursor_prediction_config
     )
@@ -219,7 +222,7 @@ def get_nodes(
         map_back = True
 
         (
-            nodes.first_gen_search_precurors,
+            nodes.first_gen_search_precursors,
             nodes.first_gen_search_fragments,
         ) = rules.sagepy_search(
             fasta=nodes.fasta,
@@ -248,7 +251,7 @@ def get_nodes(
             (
                 nodes.first_gen_sage_results,
                 nodes.first_gen_sage_results_json,
-                nodes.first_gen_search_precurors,
+                nodes.first_gen_search_precursors,
                 nodes.first_gen_sage_result_sage_tsv,
                 nodes.first_gen_search_fragments,
                 nodes.first_gen_search_results_sage_pin,
@@ -276,7 +279,7 @@ def get_nodes(
             nodes.first_gen_fdr_filtered_edges,
             nodes.first_gen_quality_control_folder,
         ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
-            found_precursors=nodes.first_gen_search_precurors,
+            found_precursors=nodes.first_gen_search_precursors,
             found_fragments=nodes.first_gen_search_fragments,
             fragment_cluster_stats=nodes.fragment_cluster_stats,
             matches=nodes.rough_matches,
@@ -333,7 +336,7 @@ def get_nodes(
     if configs.sage_config.location_wildcards.version.value == "sagepy_experimental":
         if "second_gen_sage_config" in nodes:
             (
-                nodes.second_gen_search_precurors,
+                nodes.second_gen_search_precursors,
                 nodes.second_gen_search_fragments,
             ) = rules.sagepy_search(
                 fasta=nodes.fasta,
@@ -356,7 +359,7 @@ def get_nodes(
             (
                 nodes.second_gen_sage_results,
                 nodes.second_gen_sage_results_json,
-                nodes.second_gen_search_precurors,
+                nodes.second_gen_search_precursors,
                 nodes.second_gen_sage_result_sage_tsv,
                 nodes.second_gen_search_fragments,
                 nodes.second_gen_search_results_sage_pin,
@@ -378,7 +381,7 @@ def get_nodes(
             nodes.second_gen_fdr_filtered_edges,
             nodes.second_gen_quality_control_folder,
         ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
-            found_precursors=nodes.second_gen_search_precurors,
+            found_precursors=nodes.second_gen_search_precursors,
             found_fragments=nodes.second_gen_search_fragments,
             fragment_cluster_stats=nodes.refined_fragment_stats,
             matches=nodes.refined_matches,
@@ -386,5 +389,27 @@ def get_nodes(
         )
 
     # rules.run_compomics_rescoring(sage_results_tsv = , mgf = , fasta = , config = , search_config = )
+
+    node_names_with_tables_to_summarize: list[str] = [
+        "precursor_cluster_stats",
+        "fragment_cluster_stats",
+        "rough_matches",
+        "first_gen_search_precursors",
+        "first_gen_search_fragments",
+        "first_gen_fdr_filtered_precursors",
+        "first_gen_fdr_filtered_fragments",
+        "first_gen_fdr_filtered_edges",
+        "refined_precursor_stats",
+        "refined_fragment_stats",
+        "mz_recalibrated_distributions",
+        "refined_matches",
+        "second_gen_search_precursors",
+        "second_gen_search_fragments",
+        "second_gen_fdr_filtered_precursors",
+        "second_gen_fdr_filtered_fragments",
+        "second_gen_fdr_filtered_edges",
+    ]
+    for node_name in node_names_with_tables_to_summarize:
+        nodes[f"{node_name}_summary"] = rules.summarize_table(table=nodes[node_name])
 
     return nodes

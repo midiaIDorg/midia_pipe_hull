@@ -218,6 +218,7 @@ def get_nodes(
         )
 
     map_back = False
+    # TODO: move this somehow out into some other pipeline file or make pipelines part of config.
     if configs.sage_config.location_wildcards.version.value == "sagepy_experimental":
         map_back = True
 
@@ -278,7 +279,7 @@ def get_nodes(
             nodes.first_gen_fdr_filtered_fragments,
             nodes.first_gen_fdr_filtered_edges,
             nodes.first_gen_quality_control_folder,
-        ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
+        ) = rules.map_back_sage_results_unto_peptide_fragment_graph(  # this does FDR filtering
             found_precursors=nodes.first_gen_search_precursors,
             found_fragments=nodes.first_gen_search_fragments,
             fragment_cluster_stats=nodes.fragment_cluster_stats,

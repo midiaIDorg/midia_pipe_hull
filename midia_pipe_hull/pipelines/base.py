@@ -180,6 +180,8 @@ def get_nodes(
     nodes.precursor_prediction_config = rules.get_config_from_db_into_file_system(
         config=configs.precursor_prediction_config
     )
+    
+    # TODO: why predict_precursors needs all this???
     # TODO: what to do without calibration? Likely need to describe that param as optional
     nodes.fragment_cluster_stats = rules.predict_precursors(
         fragment_cluster_stats=nodes.fragment_cluster_stats,

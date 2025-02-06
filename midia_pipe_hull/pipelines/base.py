@@ -129,8 +129,8 @@ def get_nodes(
 
     if configs.fragment_clusterer.location_wildcards.software == "tims":
         nodes.tims_fragment_clusterer_config = (
-            nodes.tims_precursor_clusterer_config
-        ) = rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
+            rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
+        )
 
         (
             nodes.fragment_clusters_hdf,
@@ -180,7 +180,7 @@ def get_nodes(
     nodes.precursor_prediction_config = rules.get_config_from_db_into_file_system(
         config=configs.precursor_prediction_config
     )
-    
+
     # TODO: why predict_precursors needs all this???
     # TODO: what to do without calibration? Likely need to describe that param as optional
     nodes.fragment_cluster_stats = rules.predict_precursors(

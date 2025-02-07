@@ -133,7 +133,7 @@ def get_nodes(
     )
 
     if configs.fragment_clusterer.location_wildcards.software == "tims":
-        nodes.base_tims_fragment_clusterer_config = (
+        nodes.tims_fragment_clusterer_config = (
             rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
         )
 
@@ -142,19 +142,20 @@ def get_nodes(
             nodes.additional_fragment_cluster_stats_old_format,
             nodes.fragment_clustering_stdout,
             nodes.fragment_clustering_stderr,
-        ) = rules.cluster_with_tims_using_isolation_mz(
+        ) = rules.cluster_with_tims_on_thprs(
             dataset=nodes.dataset,
-            precursor_stats=precursor_cluster_stats,
-            config=nodes.base_tims_fragment_clusterer_config,
+            precursor_stats=nodes.precursor_cluster_stats,
+            config=nodes.tims_fragment_clusterer_config,
             version=configs.fragment_clusterer.location_wildcards.version,
         )
 
+        # These steps are needed only for compatibility with the old pipeline..
+        # but as it is nothing really done everytime: could simply do it above.
         nodes.tims_fragments_reformat_config = (
             rules.get_config_from_db_into_file_system(
                 config=configs.tims_reformat_config
             )
         )
-
         (
             nodes.fragment_clusters,
             nodes.additional_fragment_cluster_stats,

@@ -111,6 +111,8 @@ def get_nodes(
             nodes.additional_precursor_cluster_stats,
         ) = rules.extract_tables_from_hdf(clusters_hdf=nodes.precursor_clusters_hdf)
 
+        # TODO: These steps are needed only for compatibility with the old pipeline..
+        # but as it is nothing really done everytime: could simply do it above.
         nodes.tims_precursors_reformat_config = (
             rules.get_config_from_db_into_file_system(
                 config=configs.tims_reformat_config

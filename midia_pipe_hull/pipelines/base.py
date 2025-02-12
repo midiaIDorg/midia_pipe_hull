@@ -4,6 +4,7 @@ I guess we can assume that pipelines will be simply importable functions.
 snakemaketools: general long snake capabilities.
 """
 import snakemaketools.rules
+
 from snakemaketools.datastructures import DotDict
 
 
@@ -146,6 +147,7 @@ def get_nodes(
             ),  # passing a not-user-defined wildcard
             version=configs.fragment_clusterer.location_wildcards.version,
         )
+
         (
             nodes.fragment_clusters_old_format,
             nodes.additional_fragment_cluster_stats_old_format,

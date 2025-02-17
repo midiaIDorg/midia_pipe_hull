@@ -268,9 +268,14 @@ def get_nodes(
         found_fragments=nodes.first_gen_search_fragments,
     )
 
+    nodes.filtered_search_summary_config = rules.get_config_from_db_into_file_system(
+        config=configs.filtered_search_summary_config
+    )
+
     nodes.first_gen_fdr_filtered_search_stats = rules.stat_sage_results(
-        filtered_results=nodes.first_gen_fdr_filtered_precursors,
-        filtered_matched_fragments=nodes.first_gen_fdr_filtered_fragments,
+        config=nodes.filtered_search_summary_config,
+        precursors=nodes.first_gen_fdr_filtered_precursors,
+        fragments=nodes.first_gen_fdr_filtered_fragments,
     )
 
     nodes.map_back_sage_results_unto_peptide_fragment_graph_config = (
@@ -292,9 +297,16 @@ def get_nodes(
         config=nodes.map_back_sage_results_unto_peptide_fragment_graph_config,
     )
 
+    nodes.filtered_mapped_back_search_summary_config = (
+        rules.get_config_from_db_into_file_system(
+            config=configs.filtered_mapped_back_search_summary_config
+        )
+    )
+
     nodes.first_gen_fdr_filtered_mapped_back_search_stats = rules.stat_sage_results(
-        filtered_results=nodes.first_gen_fdr_filtered_mapped_back_precursors,
-        filtered_matched_fragments=nodes.first_gen_fdr_filtered_mapped_back_precursors,
+        config=nodes.filtered_mapped_back_search_summary_config,
+        precursors=nodes.first_gen_fdr_filtered_mapped_back_precursors,
+        fragments=nodes.first_gen_fdr_filtered_mapped_back_fragments,
     )
 
     nodes.node_refinement_config = rules.get_config_from_db_into_file_system(
@@ -383,10 +395,10 @@ def get_nodes(
     )
 
     nodes.second_gen_fdr_filtered_search_stats = rules.stat_sage_results(
-        filtered_results=nodes.second_gen_fdr_filtered_precursors,
-        filtered_matched_fragments=nodes.second_gen_fdr_filtered_fragments,
+        config=nodes.filtered_search_summary_config,
+        precursors=nodes.second_gen_fdr_filtered_precursors,
+        fragments=nodes.second_gen_fdr_filtered_fragments,
     )
-
     # rules.run_compomics_rescoring(sage_results_tsv = , mgf = , fasta = , config = , search_config = )
 
     node_names_with_tables_to_summarize: list[str] = [

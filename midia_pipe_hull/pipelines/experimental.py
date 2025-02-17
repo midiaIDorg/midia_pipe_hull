@@ -223,38 +223,58 @@ def get_nodes(
             config=configs.sage_config
         )
 
-    nodes.mgf_config = rules.get_config_from_db_into_file_system(
-        config=configs.mgf_config
-    )
-    nodes.rough_mgf = rules.write_mgf(
-        precursor_cluster_stats=nodes.precursor_cluster_stats,
-        fragment_cluster_stats=nodes.fragment_cluster_stats,
-        matches=nodes.rough_matches,
-        config=nodes.mgf_config,
-    )
-    if "sage_config" in configs:
-        nodes.sage_exe = rules.get_sage(
-            version=configs.sage_config.location_wildcards.version
-            # TODO: consider putting all wildcards in one place?
-            # wildcards.sage.version would be shorter, thus more intuitive.
-        )
+    map_back = False
+    # HIGH PRIORITY FOR SIMPLICITY
+    # TODO: move this somehow out into some other pipeline file or make pipelines part of config.
+    if configs.sage_config.location_wildcards.version.value == "sagepy_experimental":
+        map_back = True
+
         (
-            nodes.first_gen_sage_results,
-            nodes.first_gen_sage_results_json,
             nodes.first_gen_search_precursors,
-            nodes.first_gen_sage_result_sage_tsv,
-            nodes.first_gen_search_fragments,  # imprecise: more like edges.
-            nodes.first_gen_search_results_sage_pin,
-            nodes.first_gen_sage_sage_stderr,
-            nodes.first_gen_sage_sage_stdout,
-        ) = rules.search_with_SAGE(
-            mgf=nodes.rough_mgf,
+            nodes.first_gen_search_fragments,
+        ) = rules.sagepy_search(
             fasta=nodes.fasta,
-            config=nodes.sage_config,
-            version=configs.sage_config.location_wildcards.version,
-            sage=nodes.sage_exe,
+            search_config=nodes.sage_config,
+            precursor_cluster_stats=nodes.precursor_cluster_stats,
+            fragment_cluster_stats=nodes.fragment_cluster_stats,
+            edges=nodes.rough_matches,
         )
 
+    else:
+        nodes.mgf_config = rules.get_config_from_db_into_file_system(
+            config=configs.mgf_config
+        )
+        nodes.rough_mgf = rules.write_mgf(
+            precursor_cluster_stats=nodes.precursor_cluster_stats,
+            fragment_cluster_stats=nodes.fragment_cluster_stats,
+            matches=nodes.rough_matches,
+            config=nodes.mgf_config,
+        )
+        if "sage_config" in configs:
+            nodes.sage_exe = rules.get_sage(
+                version=configs.sage_config.location_wildcards.version
+                # TODO: consider putting all wildcards in one place?
+                # wildcards.sage.version would be shorter, thus more intuitive.
+            )
+            (
+                nodes.first_gen_sage_results,
+                nodes.first_gen_sage_results_json,
+                nodes.first_gen_search_precursors,
+                nodes.first_gen_sage_result_sage_tsv,
+                nodes.first_gen_search_fragments,  # imprecise: more like edges.
+                nodes.first_gen_search_results_sage_pin,
+                nodes.first_gen_sage_sage_stderr,
+                nodes.first_gen_sage_sage_stdout,
+            ) = rules.search_with_SAGE(
+                mgf=nodes.rough_mgf,
+                fasta=nodes.fasta,
+                config=nodes.sage_config,
+                version=configs.sage_config.location_wildcards.version,
+                sage=nodes.sage_exe,
+            )
+            map_back = True
+
+    # TODO: add some config.
     nodes.first_gen_fdr_filter_config = rules.get_config_from_db_into_file_system(
         config=configs.first_gen_fdr_filter_config
     )
@@ -273,29 +293,31 @@ def get_nodes(
         filtered_matched_fragments=nodes.first_gen_fdr_filtered_fragments,
     )
 
-    nodes.map_back_sage_results_unto_peptide_fragment_graph_config = (
-        rules.get_config_from_db_into_file_system(
-            config=configs.map_back_sage_results_unto_peptide_fragment_graph_config
+    if map_back:
+        nodes.map_back_sage_results_unto_peptide_fragment_graph_config = (
+            rules.get_config_from_db_into_file_system(
+                config=configs.map_back_sage_results_unto_peptide_fragment_graph_config
+            )
         )
-    )
 
-    (
-        nodes.first_gen_fdr_filtered_mapped_back_precursors,
-        nodes.first_gen_fdr_filtered_mapped_back_fragments,  # not used for anything???
-        nodes.first_gen_fdr_filtered_mapped_back_edges,
-        nodes.first_gen_quality_control_folder,
-    ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
-        fdf_filtered_precursors=nodes.first_gen_fdr_filtered_precursors,
-        fdf_filtered_fragments=nodes.first_gen_fdr_filtered_fragments,
-        fragment_cluster_stats=nodes.fragment_cluster_stats,
-        matches=nodes.rough_matches,
-        config=nodes.map_back_sage_results_unto_peptide_fragment_graph_config,
-    )
+        (
+            nodes.first_gen_fdr_filtered_mapped_back_precursors,
+            nodes.first_gen_fdr_filtered_mapped_back_precursors,
+            nodes.first_gen_fdr_filtered_mapped_back_edges,
+            nodes.first_gen_quality_control_folder,
+        ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
+            # TODO: this should not do FDR filtering
+            found_precursors=nodes.first_gen_fdr_filtered_precursors,
+            found_fragments=nodes.first_gen_fdr_filtered_fragments,
+            fragment_cluster_stats=nodes.fragment_cluster_stats,
+            matches=nodes.rough_matches,
+            config=nodes.map_back_sage_results_unto_peptide_fragment_graph_config,
+        )
 
-    nodes.first_gen_fdr_filtered_mapped_back_search_stats = rules.stat_sage_results(
-        filtered_results=nodes.first_gen_fdr_filtered_mapped_back_precursors,
-        filtered_matched_fragments=nodes.first_gen_fdr_filtered_mapped_back_precursors,
-    )
+        nodes.first_gen_fdr_filtered_mapped_back_search_stats = rules.stat_sage_results(
+            filtered_results=nodes.first_gen_fdr_filtered_mapped_back_precursors,
+            filtered_matched_fragments=nodes.first_gen_fdr_filtered_mapped_back_precursors,
+        )
 
     nodes.node_refinement_config = rules.get_config_from_db_into_file_system(
         config=configs.node_refinement_config
@@ -343,30 +365,47 @@ def get_nodes(
         config=nodes.edge_refinement_config,
     )
 
-    nodes.second_gen_mgf = rules.write_mgf(
-        precursor_cluster_stats=nodes.refined_precursor_stats,
-        fragment_cluster_stats=nodes.refined_fragment_stats,
-        matches=nodes.refined_matches,
-        config=nodes.mgf_config,
-    )
+    map_back = False
+    if configs.sage_config.location_wildcards.version.value == "sagepy_experimental":
+        if "second_gen_sage_config" in nodes:
+            (
+                nodes.second_gen_search_precursors,
+                nodes.second_gen_search_fragments,
+            ) = rules.sagepy_search(
+                fasta=nodes.fasta,
+                search_config=nodes.second_gen_sage_config,
+                precursor_cluster_stats=nodes.refined_precursor_stats,
+                fragment_cluster_stats=nodes.refined_fragment_stats,
+                edges=nodes.refined_matches,
+            )
+            map_back = True
 
-    if "second_gen_sage_config" in nodes:
-        (
-            nodes.second_gen_sage_results,
-            nodes.second_gen_sage_results_json,
-            nodes.second_gen_search_precursors,
-            nodes.second_gen_sage_result_sage_tsv,
-            nodes.second_gen_search_fragments,
-            nodes.second_gen_search_results_sage_pin,
-            nodes.second_gen_sage_sage_stderr,
-            nodes.second_gen_sage_sage_stdout,
-        ) = rules.search_with_SAGE(
-            mgf=nodes.second_gen_mgf,
-            fasta=nodes.fasta,
-            config=nodes.second_gen_sage_config,
-            version=configs.sage_config.location_wildcards.version,
-            sage=nodes.sage_exe,
+    else:
+        nodes.second_gen_mgf = rules.write_mgf(
+            precursor_cluster_stats=nodes.refined_precursor_stats,
+            fragment_cluster_stats=nodes.refined_fragment_stats,
+            matches=nodes.refined_matches,
+            config=nodes.mgf_config,
         )
+
+        if "second_gen_sage_config" in nodes:
+            (
+                nodes.second_gen_sage_results,
+                nodes.second_gen_sage_results_json,
+                nodes.second_gen_search_precursors,
+                nodes.second_gen_sage_result_sage_tsv,
+                nodes.second_gen_search_fragments,
+                nodes.second_gen_search_results_sage_pin,
+                nodes.second_gen_sage_sage_stderr,
+                nodes.second_gen_sage_sage_stdout,
+            ) = rules.search_with_SAGE(
+                mgf=nodes.second_gen_mgf,
+                fasta=nodes.fasta,
+                config=nodes.second_gen_sage_config,
+                version=configs.sage_config.location_wildcards.version,
+                sage=nodes.sage_exe,
+            )
+            map_back = True
 
     # TODO: add some config.
     nodes.second_gen_fdr_filter_config = rules.get_config_from_db_into_file_system(

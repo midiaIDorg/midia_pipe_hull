@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name="midia_pipe_hull"
 version="0.0.1"
-description="Dependencies of the Snakemake pipeline."
+description="Dependencies of the midiaID pipeline."
 readme="README.md"
 authors=[
     {name="Mateusz Krzysztof Łącki",email="matteo.lacki@gmail.com"},
@@ -22,7 +22,6 @@ dependencies = [
     # "opentims_bruker_bridge",
     # "plotly",
     # "plotnine",
-    # "pony",
     # "pymysql",
     # "pytest",
     # "seaborn",
@@ -37,6 +36,7 @@ dependencies = [
     "click",
     "pandas",
     "toml",
+    "pony",
 ]
 
 [project.scripts]

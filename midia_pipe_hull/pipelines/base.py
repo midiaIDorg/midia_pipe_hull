@@ -407,17 +407,10 @@ def get_nodes(
         "rough_matches",
         "first_gen_search_precursors",
         "first_gen_search_fragments",
-        # "first_gen_fdr_filtered_precursors",
-        # "first_gen_fdr_filtered_fragments",
-        # "first_gen_fdr_filtered_mapped_back_edges",
         "refined_precursor_stats",
         "refined_fragment_stats",
         "mz_recalibrated_distributions",
         "refined_matches",
-        # "second_gen_search_precursors",
-        # "second_gen_search_fragments",
-        # "second_gen_fdr_filtered_precursors",
-        # "second_gen_fdr_filtered_fragments",
     ]
     for node_name in node_names_with_tables_to_summarize:
         nodes[f"{node_name}_summary"] = rules.summarize_table(table=nodes[node_name])

@@ -362,6 +362,17 @@ def get_nodes(
         config=nodes.mgf_config,
     )
 
+    if "peaks_mgf_config" in configs:
+        nodes.peaks_mgf_config = rules.get_config_from_db_into_file_system(
+            config=configs.peaks_mgf_config
+        )
+        nodes.second_gen_mgf_peaks = rules.write_mgf(
+            precursor_cluster_stats=nodes.refined_precursor_stats,
+            fragment_cluster_stats=nodes.refined_fragment_stats,
+            matches=nodes.refined_matches,
+            config=nodes.peaks_mgf_config,
+        )
+
     if "second_gen_sage_config" in nodes:
         (
             nodes.second_gen_sage_results,

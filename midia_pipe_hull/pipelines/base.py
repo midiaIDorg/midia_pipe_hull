@@ -309,6 +309,13 @@ def get_nodes(
         fragments=nodes.first_gen_fdr_filtered_mapped_back_fragments,
     )
 
+    nodes.first_gen_fdr_filtered_mapped_back_search_results_plot = rules.overplot_sage_results_on_window_groups(
+        precursor_stats_path=nodes.precursor_cluster_stats,
+        filtered_mapped_back_sage_results_path=nodes.first_gen_fdr_filtered_mapped_back_precursors,
+        dataset_path=nodes.dataset,
+        memmapped_dataset_path=nodes.memmapped_dataset,
+    )
+
     nodes.node_refinement_config = rules.get_config_from_db_into_file_system(
         config=configs.node_refinement_config
     )
@@ -425,5 +432,31 @@ def get_nodes(
     ]
     for node_name in node_names_with_tables_to_summarize:
         nodes[f"{node_name}_summary"] = rules.summarize_table(table=nodes[node_name])
+
+    (
+        nodes.second_gen_fdr_filtered_mapped_back_precursors,
+        nodes.second_gen_fdr_filtered_mapped_back_fragments,  # not used for anything???
+        nodes.second_gen_fdr_filtered_mapped_back_edges,
+        nodes.second_gen_quality_control_folder,
+    ) = rules.map_back_sage_results_unto_peptide_fragment_graph(
+        fdf_filtered_precursors=nodes.second_gen_fdr_filtered_precursors,
+        fdf_filtered_fragments=nodes.second_gen_fdr_filtered_fragments,
+        fragment_cluster_stats=nodes.refined_fragment_stats,
+        matches=nodes.rough_matches,
+        config=nodes.map_back_sage_results_unto_peptide_fragment_graph_config,
+    )
+
+    nodes.second_gen_fdr_filtered_mapped_back_search_stats = rules.stat_sage_results(
+        config=nodes.filtered_mapped_back_search_summary_config,
+        precursors=nodes.second_gen_fdr_filtered_mapped_back_precursors,
+        fragments=nodes.second_gen_fdr_filtered_mapped_back_fragments,
+    )
+
+    nodes.second_gen_fdr_filtered_mapped_back_search_results_plot = rules.overplot_sage_results_on_window_groups(
+        precursor_stats_path=nodes.precursor_cluster_stats,
+        filtered_mapped_back_sage_results_path=nodes.second_gen_fdr_filtered_mapped_back_precursors,
+        dataset_path=nodes.dataset,
+        memmapped_dataset_path=nodes.memmapped_dataset,
+    )
 
     return nodes

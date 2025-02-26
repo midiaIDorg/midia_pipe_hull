@@ -38,6 +38,10 @@ def get_nodes(
     )
     nodes.memmapped_dataset = rules.memmap_data(folder_d=nodes.dataset)
 
+    nodes.raw_data_2D_histograms = rules.raw_data_2D_histograms(
+        dataset=nodes.dataset, memmapped_dataset=nodes.memmapped_dataset
+    )
+
     # nodes.calibration_results = snakemaketools.rules.Node(location="None")
     (
         nodes.calibration,

@@ -317,7 +317,7 @@ def get_nodes(
         precursor_stats_path=nodes.precursor_cluster_stats,
         filtered_mapped_back_sage_results_path=nodes.first_gen_fdr_filtered_mapped_back_precursors,
         dataset_path=nodes.dataset,
-        memmapped_dataset_path=nodes.memmapped_dataset,
+        rawdata_histograms_path=nodes.raw_data_2D_histograms,
     )
 
     nodes.node_refinement_config = rules.get_config_from_db_into_file_system(
@@ -460,7 +460,7 @@ def get_nodes(
         precursor_stats_path=nodes.precursor_cluster_stats,
         filtered_mapped_back_sage_results_path=nodes.second_gen_fdr_filtered_mapped_back_precursors,
         dataset_path=nodes.dataset,
-        memmapped_dataset_path=nodes.memmapped_dataset,
+        rawdata_histograms_path=nodes.raw_data_2D_histograms,
     )
 
     return nodes

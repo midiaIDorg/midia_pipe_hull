@@ -23,16 +23,9 @@ def get_nodes(
     nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
     nodes.fasta_stats = rules.summarize_fasta(fasta=nodes.fasta)
 
-    (
-        nodes.dataset,
-        nodes.dataset_analysis_tdf,
-        nodes.dataset_analysis_tdf_bin,
-    ) = rules.fetch_data(folder_d=wildcards.dataset)
+    nodes.dataset = rules.fetch_data(folder_d=wildcards.dataset)
+    nodes.dataset_hashes = rules.hash_d(folder=nodes.dataset)
 
-    nodes.dataset_analysis_tdf_hash = rules.hash256(path=nodes.dataset_analysis_tdf)
-    nodes.dataset_analysis_tdf_bin_hash = rules.hash256(
-        path=nodes.dataset_analysis_tdf_bin
-    )
     nodes.dataset_marginal_distribution_plots = rules.get_marginal_distribution_plots(
         raw_data=nodes.dataset
     )
@@ -43,17 +36,9 @@ def get_nodes(
     )
 
     # nodes.calibration_results = snakemaketools.rules.Node(location="None")
-    (
-        nodes.calibration,
-        nodes.calibration_analysis_tdf,
-        nodes.calibration_analysis_tdf_bin,
-    ) = rules.fetch_data(folder_d=wildcards.calibration)
-    nodes.calibration_analysis_tdf_hash = rules.hash256(
-        path=nodes.calibration_analysis_tdf
-    )
-    nodes.calibration_analysis_tdf_bin_hash = rules.hash256(
-        path=nodes.calibration_analysis_tdf_bin
-    )
+    nodes.calibration = rules.fetch_data(folder_d=wildcards.calibration)
+
+    nodes.calibration_hashes = rules.hash_d(folder=nodes.calibration)
 
     nodes.calibration_results = snakemaketools.rules.Node(location="none")
     nodes.dataset_matches_calibration_assertion = snakemaketools.rules.Node(
@@ -62,8 +47,8 @@ def get_nodes(
     if not "None.d" in nodes.calibration.location:
         nodes.dataset_matches_calibration_assertion = (
             rules.report_if_dataset_and_calibration_comply(
-                dataset_analysis_tdf=nodes.dataset_analysis_tdf,
-                calibration_analysis_tdf=nodes.calibration_analysis_tdf,
+                dataset=nodes.dataset,
+                calibration=nodes.calibration,
             )
         )
         nodes.calibration_marginal_distributions = (
@@ -73,23 +58,6 @@ def get_nodes(
         nodes.calibration_results = rules.precompute_calibration(
             calibration=nodes.calibration,
             memmapped_calibration=nodes.memmapped_calibration,
-        )
-
-    if "baseline_removal" in configs:
-        # TO THINK: do we actually need to use the `set` method?
-        # No, likely need one method in the pipeline to set the configs.
-        # TODO: if anything: this should rather work on .startrek formatted data.
-        nodes.baseline_removal_config = rules.get_config_from_db_into_file_system(
-            config=configs.baseline_removal
-        )
-
-        (
-            nodes.dataset,
-            nodes.dataset_analysis_tdf,
-            nodes.dataset_analysis_tdf_bin,
-        ) = rules.remove_raw_data_baseline(
-            raw_data=nodes.dataset,
-            config=nodes.baseline_removal_config,
         )
 
     if configs.precursor_clusterer.location_wildcards.software == "tims":
@@ -129,7 +97,7 @@ def get_nodes(
         ) = rules.tims_reformat(
             clusters_startrek=nodes.precursor_clusters_old_format,
             additional_cluster_stats=nodes.additional_precursor_cluster_stats,
-            analysis_tdf=nodes.dataset_analysis_tdf,
+            dataset=nodes.dataset,
             config=nodes.tims_precursors_reformat_config,
         )
         # TODO: add optional sorting
@@ -169,7 +137,7 @@ def get_nodes(
         ) = rules.tims_reformat(
             clusters_startrek=nodes.fragment_clusters_old_format,
             additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
-            analysis_tdf=nodes.dataset_analysis_tdf,
+            dataset=nodes.dataset,
             config=nodes.tims_fragments_reformat_config,
         )
         # TODO: add optional sorting
@@ -195,7 +163,7 @@ def get_nodes(
         fragment_cluster_stats=nodes.fragment_cluster_stats,
         fragment_clusters=nodes.fragment_clusters,
         calibration_results=nodes.calibration_results,
-        analysis_tdf=nodes.dataset_analysis_tdf,
+        dataset=nodes.dataset,
         config=nodes.precursor_prediction_config,
     )
 
@@ -243,7 +211,6 @@ def get_nodes(
             # wildcards.sage.version would be shorter, thus more intuitive.
         )
         (
-            nodes.first_gen_sage_results,
             nodes.first_gen_sage_results_json,
             nodes.first_gen_search_precursors,
             nodes.first_gen_sage_result_sage_tsv,
@@ -386,7 +353,6 @@ def get_nodes(
 
     if "second_gen_sage_config" in nodes:
         (
-            nodes.second_gen_sage_results,
             nodes.second_gen_sage_results_json,
             nodes.second_gen_search_precursors,
             nodes.second_gen_sage_result_sage_tsv,

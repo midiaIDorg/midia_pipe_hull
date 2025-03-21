@@ -153,7 +153,7 @@ def get_nodes(
     )
 
     # TODO: why predict_precursors needs all this???
-    # TODO: what to do without calibration? Likely need to describe that param as optional
+    # TODO: what to do without calibration? Likely need to describe that param as optional or set to None.
     nodes.fragment_cluster_stats = rules.predict_precursors(
         fragment_cluster_stats=nodes.fragment_cluster_stats,
         fragment_clusters=nodes.fragment_clusters,

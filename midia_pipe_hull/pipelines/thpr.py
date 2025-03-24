@@ -109,9 +109,13 @@ def get_nodes(
 
     nodes.tims_thprs_folder = rules.cluster_with_tims_on_thprs(
         dataset=nodes.dataset,
-        precursor_stats=nodes.precursor_cluster_stats,
         config=nodes.tims_fragment_clusterer_config,
+        precursor_stats=nodes.precursor_cluster_stats,
         version=configs.fragment_clusterer.location_wildcards.version,
+    )
+
+    nodes.summarize_thprs_config = rules.get_config_from_db_into_file_system(
+        config=configs.fragment_clusterer
     )
 
     (
@@ -120,8 +124,8 @@ def get_nodes(
         nodes.fragment_clustering_stdout,
         nodes.fragment_clustering_stderr,
     ) = rules.summarize_thprs(
-        tims_thprs_folder=tims_thprs_folder,
-        config=nodes.tims_fragment_clusterer_config,
+        tims_thprs_folder=nodes.tims_thprs_folder,
+        config=nodes.summarize_thprs_config,
     )
 
     # These steps are needed only for compatibility with the old pipeline..

@@ -198,6 +198,7 @@ def get_nodes(
         nodes.first_gen_search_precursors,
         nodes.first_gen_search_fragments,
     ) = rules.sagepy_search(
+        dataset=nodes.dataset,
         fasta=nodes.fasta,
         search_config=nodes.sage_config,
         precursor_cluster_stats=nodes.precursor_cluster_stats,
@@ -328,6 +329,7 @@ def get_nodes(
             nodes.second_gen_search_precursors,
             nodes.second_gen_search_fragments,
         ) = rules.sagepy_search(
+            dataset=nodes.dataset,
             fasta=nodes.fasta,
             search_config=nodes.second_gen_sage_config,
             precursor_cluster_stats=nodes.refined_precursor_stats,

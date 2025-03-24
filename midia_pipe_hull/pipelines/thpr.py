@@ -61,86 +61,83 @@ def get_nodes(
             memmapped_calibration=nodes.memmapped_calibration,
         )
 
-    if configs.precursor_clusterer.location_wildcards.software == "tims":
-        nodes.tims_precursor_clusterer_config = (
-            rules.get_config_from_db_into_file_system(
-                config=configs.precursor_clusterer
-            )
-        )
+    nodes.tims_precursor_clusterer_config = rules.get_config_from_db_into_file_system(
+        config=configs.precursor_clusterer
+    )
 
-        (
-            nodes.precursor_clusters_hdf,
-            nodes.precursor_clustering_stdout,
-            nodes.precursor_clustering_stderr,
-        ) = rules.cluster_with_tims(
-            dataset=nodes.dataset,
-            config=nodes.tims_precursor_clusterer_config,
-            level=snakemaketools.rules.Wildcard(
-                name="level", value="precursor"
-            ),  # passing a not-user-defined wildcard
-            version=configs.precursor_clusterer.location_wildcards.version,
-        )
-        (
-            nodes.precursor_clusters_old_format,
-            nodes.additional_precursor_cluster_stats,
-        ) = rules.extract_tables_from_hdf(clusters_hdf=nodes.precursor_clusters_hdf)
+    (
+        nodes.precursor_clusters_hdf,
+        nodes.precursor_clustering_stdout,
+        nodes.precursor_clustering_stderr,
+    ) = rules.cluster_with_tims(
+        dataset=nodes.dataset,
+        config=nodes.tims_precursor_clusterer_config,
+        level=snakemaketools.rules.Wildcard(
+            name="level", value="precursor"
+        ),  # passing a not-user-defined wildcard
+        version=configs.precursor_clusterer.location_wildcards.version,
+    )
+    (
+        nodes.precursor_clusters_old_format,
+        nodes.additional_precursor_cluster_stats,
+    ) = rules.extract_tables_from_hdf(clusters_hdf=nodes.precursor_clusters_hdf)
 
-        # TODO: These steps are needed only for compatibility with the old pipeline..
-        # but as it is nothing really done everytime: could simply do it above.
-        nodes.tims_precursors_reformat_config = (
-            rules.get_config_from_db_into_file_system(
-                config=configs.tims_reformat_config
-            )
-        )
-        (
-            nodes.precursor_clusters,
-            nodes.additional_precursor_cluster_stats,
-        ) = rules.tims_reformat(
-            clusters_startrek=nodes.precursor_clusters_old_format,
-            additional_cluster_stats=nodes.additional_precursor_cluster_stats,
-            dataset=nodes.dataset,
-            config=nodes.tims_precursors_reformat_config,
-        )
-        # TODO: add optional sorting
+    # TODO: These steps are needed only for compatibility with the old pipeline..
+    # but as it is nothing really done everytime: could simply do it above.
+    nodes.tims_precursors_reformat_config = rules.get_config_from_db_into_file_system(
+        config=configs.tims_reformat_config
+    )
+    (
+        nodes.precursor_clusters,
+        nodes.additional_precursor_cluster_stats,
+    ) = rules.tims_reformat(
+        clusters_startrek=nodes.precursor_clusters_old_format,
+        additional_cluster_stats=nodes.additional_precursor_cluster_stats,
+        dataset=nodes.dataset,
+        config=nodes.tims_precursors_reformat_config,
+    )
+    # TODO: add optional sorting
 
     # TODO: optimization: instead of .parquet, use .startrek
     nodes.precursor_cluster_stats = rules.get_cluster_stats(
         clusters_startrek=nodes.precursor_clusters
     )
 
-    if configs.fragment_clusterer.location_wildcards.software == "tims":
-        nodes.tims_fragment_clusterer_config = (
-            rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
-        )
+    nodes.tims_fragment_clusterer_config = rules.get_config_from_db_into_file_system(
+        config=configs.fragment_clusterer
+    )
 
-        (
-            nodes.fragment_clusters_old_format,
-            nodes.additional_fragment_cluster_stats_old_format,
-            nodes.fragment_clustering_stdout,
-            nodes.fragment_clustering_stderr,
-        ) = rules.cluster_with_tims_on_thprs(
-            dataset=nodes.dataset,
-            precursor_stats=nodes.precursor_cluster_stats,
-            config=nodes.tims_fragment_clusterer_config,
-            version=configs.fragment_clusterer.location_wildcards.version,
-        )
+    nodes.tims_thprs_folder = rules.cluster_with_tims_on_thprs(
+        dataset=nodes.dataset,
+        precursor_stats=nodes.precursor_cluster_stats,
+        config=nodes.tims_fragment_clusterer_config,
+        version=configs.fragment_clusterer.location_wildcards.version,
+    )
 
-        # These steps are needed only for compatibility with the old pipeline..
-        # but as it is nothing really done everytime: could simply do it above.
-        nodes.tims_fragments_reformat_config = (
-            rules.get_config_from_db_into_file_system(
-                config=configs.tims_reformat_config
-            )
-        )
-        (
-            nodes.fragment_clusters,
-            nodes.additional_fragment_cluster_stats,
-        ) = rules.tims_reformat(
-            clusters_startrek=nodes.fragment_clusters_old_format,
-            additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
-            dataset=nodes.dataset,
-            config=nodes.tims_fragments_reformat_config,
-        )
+    (
+        nodes.fragment_clusters_old_format,
+        nodes.additional_fragment_cluster_stats_old_format,
+        nodes.fragment_clustering_stdout,
+        nodes.fragment_clustering_stderr,
+    ) = rules.summarize_thprs(
+        tims_thprs_folder=tims_thprs_folder,
+        config=nodes.tims_fragment_clusterer_config,
+    )
+
+    # These steps are needed only for compatibility with the old pipeline..
+    # but as it is nothing really done everytime: could simply do it above.
+    nodes.tims_fragments_reformat_config = rules.get_config_from_db_into_file_system(
+        config=configs.tims_reformat_config
+    )
+    (
+        nodes.fragment_clusters,
+        nodes.additional_fragment_cluster_stats,
+    ) = rules.tims_reformat(
+        clusters_startrek=nodes.fragment_clusters_old_format,
+        additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
+        dataset=nodes.dataset,
+        config=nodes.tims_fragments_reformat_config,
+    )
 
     # TODO: optimization: instead of .parquet, use .startrek
     nodes.fragment_cluster_stats = rules.get_cluster_stats(

@@ -115,7 +115,7 @@ def get_nodes(
     )
 
     nodes.summarize_thprs_config = rules.get_config_from_db_into_file_system(
-        config=configs.fragment_clusterer
+        config=configs.thprs_summary
     )
 
     (

@@ -196,7 +196,7 @@ def get_nodes(
         config=nodes.mgf_config,
     )
 
-    first_gen_sage_config = configs.get("first_gen_sage_config", configs["sage_config"])
+    first_gen_sage_config = configs.get("first_gen_sage_config", configs.get("sage_config"))
     nodes.first_gen_sage_config = rules.get_config_from_db_into_file_system(
         config=first_gen_sage_config
     )
@@ -338,7 +338,7 @@ def get_nodes(
         )
 
     second_gen_sage_config = configs.get(
-        "second_gen_sage_config", configs["sage_config"]
+        "second_gen_sage_config", configs.get("sage_config")
     )
     nodes.second_gen_sage_config = rules.get_config_from_db_into_file_system(
         config=second_gen_sage_config

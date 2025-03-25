@@ -190,8 +190,9 @@ def get_nodes(
         config=nodes.matching_config,
     )
 
-    nodes.sage_config = rules.get_config_from_db_into_file_system(
-        config=configs.sage_config
+    first_gen_sage_config = configs.get("first_gen_sage_config", configs["sage_config"])
+    nodes.first_gen_sage_config = rules.get_config_from_db_into_file_system(
+        config=first_gen_sage_config
     )
 
     (
@@ -200,7 +201,7 @@ def get_nodes(
     ) = rules.sagepy_search(
         dataset=nodes.dataset,
         fasta=nodes.fasta,
-        search_config=nodes.sage_config,
+        search_config=nodes.first_gen_sage_config,
         precursor_cluster_stats=nodes.precursor_cluster_stats,
         fragment_cluster_stats=nodes.fragment_cluster_stats,
         edges=nodes.rough_matches,
@@ -284,17 +285,6 @@ def get_nodes(
         config=nodes.node_refinement_config,
     )
 
-    nodes.second_gen_sage_config = nodes.sage_config
-    if "sage_search_update_config" in configs:
-        nodes.sage_search_update_config = rules.get_config_from_db_into_file_system(
-            config=configs.sage_search_update_config
-        )
-        nodes.second_gen_sage_config = rules.refine_sage_config(
-            sage_config=nodes.sage_config,
-            mz_recalibrated_distributions=nodes.mz_recalibrated_distributions,
-            config=nodes.sage_search_update_config,
-        )
-
     nodes.edge_refinement_config = rules.get_config_from_db_into_file_system(
         config=configs.edge_refinement_config
     )
@@ -324,18 +314,34 @@ def get_nodes(
             config=nodes.peaks_mgf_config,
         )
 
-    if "second_gen_sage_config" in nodes:
-        (
-            nodes.second_gen_search_precursors,
-            nodes.second_gen_search_fragments,
-        ) = rules.sagepy_search(
-            dataset=nodes.dataset,
-            fasta=nodes.fasta,
-            search_config=nodes.second_gen_sage_config,
-            precursor_cluster_stats=nodes.refined_precursor_stats,
-            fragment_cluster_stats=nodes.refined_fragment_stats,
-            edges=nodes.refined_matches,
+    second_gen_sage_config = configs.get(
+        "second_gen_sage_config", configs["sage_config"]
+    )
+    nodes.second_gen_sage_config = rules.get_config_from_db_into_file_system(
+        config=second_gen_sage_config
+    )
+
+    if "sage_search_update_config" in configs:
+        nodes.sage_search_update_config = rules.get_config_from_db_into_file_system(
+            config=configs.sage_search_update_config
         )
+        nodes.second_gen_sage_config = rules.refine_sage_config(
+            sage_config=nodes.second_gen_sage_config,
+            mz_recalibrated_distributions=nodes.mz_recalibrated_distributions,
+            config=nodes.sage_search_update_config,
+        )
+
+    (
+        nodes.second_gen_search_precursors,
+        nodes.second_gen_search_fragments,
+    ) = rules.sagepy_search(
+        dataset=nodes.dataset,
+        fasta=nodes.fasta,
+        search_config=nodes.second_gen_sage_config,
+        precursor_cluster_stats=nodes.refined_precursor_stats,
+        fragment_cluster_stats=nodes.refined_fragment_stats,
+        edges=nodes.refined_matches,
+    )
 
     # TODO: add some config.
     nodes.second_gen_fdr_filter_config = rules.get_config_from_db_into_file_system(

@@ -190,11 +190,6 @@ def get_nodes(
         config=nodes.matching_config,
     )
 
-    if "sage_config" in configs:
-        nodes.sage_config = rules.get_config_from_db_into_file_system(
-            config=configs.sage_config
-        )
-
     nodes.mgf_config = rules.get_config_from_db_into_file_system(
         config=configs.mgf_config
     )
@@ -204,27 +199,31 @@ def get_nodes(
         matches=nodes.rough_matches,
         config=nodes.mgf_config,
     )
-    if "sage_config" in configs:
-        nodes.sage_exe = rules.get_sage(
-            version=configs.sage_config.location_wildcards.version
-            # TODO: consider putting all wildcards in one place?
-            # wildcards.sage.version would be shorter, thus more intuitive.
-        )
-        (
-            nodes.first_gen_sage_results_json,
-            nodes.first_gen_search_precursors,
-            nodes.first_gen_sage_result_sage_tsv,
-            nodes.first_gen_search_fragments,  # imprecise: more like edges.
-            nodes.first_gen_search_results_sage_pin,
-            nodes.first_gen_sage_sage_stderr,
-            nodes.first_gen_sage_sage_stdout,
-        ) = rules.search_with_SAGE(
-            mgf=nodes.rough_mgf,
-            fasta=nodes.fasta,
-            config=nodes.sage_config,
-            version=configs.sage_config.location_wildcards.version,
-            sage=nodes.sage_exe,
-        )
+
+    nodes.first_gen_sage_config = rules.get_config_from_db_into_file_system(
+        config=configs.get("first_gen_sage_config", configs["sage_config"])
+    )
+
+    nodes.sage_exe = rules.get_sage(
+        version=configs.sage_config.location_wildcards.version
+        # TODO: consider putting all wildcards in one place?
+        # wildcards.sage.version would be shorter, thus more intuitive.
+    )
+    (
+        nodes.first_gen_sage_results_json,
+        nodes.first_gen_search_precursors,
+        nodes.first_gen_sage_result_sage_tsv,
+        nodes.first_gen_search_fragments,  # imprecise: more like edges.
+        nodes.first_gen_search_results_sage_pin,
+        nodes.first_gen_sage_sage_stderr,
+        nodes.first_gen_sage_sage_stdout,
+    ) = rules.search_with_SAGE(
+        mgf=nodes.rough_mgf,
+        fasta=nodes.fasta,
+        config=nodes.first_gen_sage_config,
+        version=configs.first_gen_sage_config.location_wildcards.version,
+        sage=nodes.sage_exe,
+    )
 
     nodes.first_gen_fdr_filter_config = rules.get_config_from_db_into_file_system(
         config=configs.first_gen_fdr_filter_config
@@ -304,13 +303,16 @@ def get_nodes(
         config=nodes.node_refinement_config,
     )
 
-    nodes.second_gen_sage_config = nodes.sage_config
+    nodes.second_gen_sage_config = rules.get_config_from_db_into_file_system(
+        config=configs.get("second_gen_sage_config", configs["sage_config"])
+    )
+
     if "sage_search_update_config" in configs:
         nodes.sage_search_update_config = rules.get_config_from_db_into_file_system(
             config=configs.sage_search_update_config
         )
         nodes.second_gen_sage_config = rules.refine_sage_config(
-            sage_config=nodes.sage_config,
+            sage_config=nodes.second_gen_sage_config,
             mz_recalibrated_distributions=nodes.mz_recalibrated_distributions,
             config=nodes.sage_search_update_config,
         )
@@ -364,7 +366,7 @@ def get_nodes(
             mgf=nodes.second_gen_mgf,
             fasta=nodes.fasta,
             config=nodes.second_gen_sage_config,
-            version=configs.sage_config.location_wildcards.version,
+            version=configs.second_gen_sage_config.location_wildcards.version,
             sage=nodes.sage_exe,
         )
 

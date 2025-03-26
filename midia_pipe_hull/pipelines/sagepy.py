@@ -178,12 +178,20 @@ def get_nodes(
             table_1=nodes.additional_precursor_cluster_stats,
         )
 
+    nodes.precursor_cluster_stats_size = rules.get_table_size(
+        table=nodes.precursor_cluster_stats
+    )
+
     if "additional_fragment_cluster_stats" in nodes:
         # TODO: figure out how to pass in variadic number of files with and without names.
         nodes.fragment_cluster_stats = rules.combine_cluster_stats(
             table_0=nodes.fragment_cluster_stats,
             table_1=nodes.additional_fragment_cluster_stats,
         )
+
+    nodes.fragment_cluster_stats_size = rules.get_table_size(
+        table=nodes.fragment_cluster_stats
+    )
 
     nodes.matching_config = rules.get_config_from_db_into_file_system(
         config=configs.matching

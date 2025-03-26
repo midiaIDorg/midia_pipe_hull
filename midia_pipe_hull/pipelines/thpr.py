@@ -31,7 +31,7 @@ def get_nodes(
     )
     nodes.memmapped_dataset = rules.memmap_data(folder_d=nodes.dataset)
     nodes.assert_dataset_strictly_lexicographically_sorted = (
-        rules.rawdata_strictly_lexicographically_sorted(rawdata=nodes.memmapped_dataset)
+        rules.assert_lexicographically_sorted(rawdata=nodes.memmapped_dataset)
     )
 
     nodes.raw_data_2D_histograms = rules.raw_data_2D_histograms(

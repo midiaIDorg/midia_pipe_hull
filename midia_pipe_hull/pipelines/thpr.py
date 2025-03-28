@@ -448,4 +448,18 @@ def get_nodes(
         rawdata_histograms_path=nodes.raw_data_2D_histograms,
     )
 
+    if "compomics_rescoring_config" in configs:
+        nodes.compomics_rescoring_config = rules.get_config_from_db_into_file_system(
+            config=configs.compomics_rescoring_config
+        )
+
+        nodes.rescoring_results = rules.run_compomics_rescoring(
+            sage_results_tsv=nodes.second_gen_sage_result_sage_tsv,
+            mgf=nodes.second_gen_mgf,
+            fasta=nodes.fasta,
+            config=nodes.compomics_rescoring_config,
+            search_config=nodes.second_gen_sage_config,
+            rescorer=configs.compomics_rescoring_config.location_wildcards.rescorer,
+        )
+
     return nodes

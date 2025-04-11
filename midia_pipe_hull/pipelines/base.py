@@ -64,6 +64,9 @@ def get_nodes(
             memmapped_calibration=nodes.memmapped_calibration,
         )
 
+    if not "precursor_clusterer" in configs:
+        return nodes
+
     if configs.precursor_clusterer.location_wildcards.software == "tims":
         nodes.tims_precursor_clusterer_config = (
             rules.get_config_from_db_into_file_system(

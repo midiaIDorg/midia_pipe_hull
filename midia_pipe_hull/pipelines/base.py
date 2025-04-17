@@ -81,10 +81,12 @@ def get_nodes(
         ) = rules.cluster_with_tims(
             dataset=nodes.dataset,
             config=nodes.tims_precursor_clusterer_config,
-            level=snakemaketools.rules.Wildcard(
-                name="level", value="precursor"
-            ),  # passing a not-user-defined wildcard
+            level="precursor",
+            # level=snakemaketools.rules.Wildcard(
+            #     name="level", value="precursor"
+            # ),  # passing a not-user-defined wildcard
             version=configs.precursor_clusterer.location_wildcards.version,
+            clusters_extension=configs.precursor_clusterer.location_wildcards.clusters_extension,
         )
         (
             nodes.precursor_clusters_old_format,
@@ -121,10 +123,9 @@ def get_nodes(
         ) = rules.cluster_with_tims(
             dataset=nodes.dataset,
             config=nodes.tims_fragment_clusterer_config,
-            level=snakemaketools.rules.Wildcard(
-                name="level", value="fragment"
-            ),  # passing a not-user-defined wildcard
+            level="fragment",
             version=configs.fragment_clusterer.location_wildcards.version,
+            clusters_extension=configs.fragment_clusterer.location_wildcards.clusters_extension,
         )
 
         (

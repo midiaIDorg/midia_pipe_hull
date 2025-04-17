@@ -12,7 +12,9 @@ from snakemaketools.datastructures import DotDict
 def get_nodes(
     rules: DotDict[str, snakemaketools.rules.Rule],
     configs: DotDict[str, snakemaketools.rules.Config],
-    wildcards: DotDict[str, snakemaketools.rules.Wildcard],
+    wildcards: DotDict[
+        str, snakemaketools.rules.Wildcard
+    ],  # those can also be turned into strings now.
 ) -> DotDict[str, snakemaketools.rules.Node]:
     """
     Remember that here we only register paths in the DB.
@@ -67,7 +69,7 @@ def get_nodes(
     if not "precursor_clusterer" in configs:
         return nodes
 
-    if configs.precursor_clusterer.location_wildcards.software == "tims":
+    if configs.precursor_clusterer.wildcards.software == "tims":
         nodes.tims_precursor_clusterer_config = (
             rules.get_config_from_db_into_file_system(
                 config=configs.precursor_clusterer
@@ -82,11 +84,10 @@ def get_nodes(
             dataset=nodes.dataset,
             config=nodes.tims_precursor_clusterer_config,
             level="precursor",
-            # level=snakemaketools.rules.Wildcard(
-            #     name="level", value="precursor"
-            # ),  # passing a not-user-defined wildcard
-            version=configs.precursor_clusterer.location_wildcards.version,
-            clusters_extension=configs.precursor_clusterer.location_wildcards.clusters_extension,
+            version=configs.precursor_clusterer.wildcards.version,
+            clusters_extension="sqlite"
+            if configs.precursor_clusterer.parsed.indexBased == 0
+            else "hdf",
         )
         (
             nodes.precursor_clusters_old_format,
@@ -111,7 +112,7 @@ def get_nodes(
         )
         # TODO: add optional sorting
 
-    if configs.fragment_clusterer.location_wildcards.software == "tims":
+    if configs.fragment_clusterer.wildcards.software == "tims":
         nodes.tims_fragment_clusterer_config = (
             rules.get_config_from_db_into_file_system(config=configs.fragment_clusterer)
         )
@@ -124,8 +125,10 @@ def get_nodes(
             dataset=nodes.dataset,
             config=nodes.tims_fragment_clusterer_config,
             level="fragment",
-            version=configs.fragment_clusterer.location_wildcards.version,
-            clusters_extension=configs.fragment_clusterer.location_wildcards.clusters_extension,
+            version=configs.fragment_clusterer.wildcards.version,
+            clusters_extension="sqlite"
+            if configs.fragment_clusterer.parsed.indexBased == 0
+            else "hdf",
         )
 
         (
@@ -224,7 +227,7 @@ def get_nodes(
     )
 
     nodes.first_gen_sage_exe = rules.get_sage(
-        version=first_gen_sage_config.location_wildcards.version
+        version=first_gen_sage_config.wildcards.version
     )
     # TODO: consider putting all wildcards in one place?
     # wildcards.sage.version would be shorter, thus more intuitive.
@@ -241,7 +244,7 @@ def get_nodes(
         mgf=nodes.rough_mgf,
         fasta=nodes.fasta,
         config=nodes.first_gen_sage_config,
-        version=first_gen_sage_config.location_wildcards.version,
+        version=first_gen_sage_config.wildcards.version,
         sage=nodes.first_gen_sage_exe,
     )
 
@@ -377,7 +380,7 @@ def get_nodes(
         )
 
     nodes.second_gen_sage_exe = rules.get_sage(
-        version=second_gen_sage_config.location_wildcards.version
+        version=second_gen_sage_config.wildcards.version
     )
 
     (
@@ -392,7 +395,7 @@ def get_nodes(
         mgf=nodes.second_gen_mgf,
         fasta=nodes.fasta,
         config=nodes.second_gen_sage_config,
-        version=second_gen_sage_config.location_wildcards.version,
+        version=second_gen_sage_config.wildcards.version,
         sage=nodes.second_gen_sage_exe,
     )
 
@@ -468,7 +471,7 @@ def get_nodes(
             fasta=nodes.fasta,
             config=nodes.compomics_rescoring_config,
             search_config=nodes.second_gen_sage_config,
-            rescorer=configs.compomics_rescoring_config.location_wildcards.rescorer,
+            rescorer=configs.compomics_rescoring_config.wildcards.rescorer,
         )
 
     return nodes

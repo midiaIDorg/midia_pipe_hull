@@ -22,9 +22,6 @@ def get_nodes(
     """
     nodes: DotDict[str, snakemaketools.rules.Node] = DotDict()
 
-    nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
-    nodes.fasta_stats = rules.summarize_fasta(fasta=nodes.fasta)
-
     nodes.dataset = rules.fetch_data(folder_d=wildcards.dataset)
     nodes.dataset_hashes = rules.hash_d(folder=nodes.dataset)
 
@@ -49,6 +46,11 @@ def get_nodes(
     nodes.dataset_matches_calibration_assertion = snakemaketools.rules.Node(
         location="none"
     )
+    if not "fasta" in wildcards:
+        return nodes
+
+    nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
+    nodes.fasta_stats = rules.summarize_fasta(fasta=nodes.fasta)
 
     if not "None.d" in nodes.calibration.location:
         nodes.dataset_matches_calibration_assertion = (

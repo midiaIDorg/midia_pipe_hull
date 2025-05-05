@@ -22,49 +22,75 @@ def get_nodes(
     """
     nodes: DotDict[str, snakemaketools.rules.Node] = DotDict()
 
-    nodes.dataset = rules.fetch_data(folder_d=wildcards.dataset)
-    nodes.dataset_hashes = rules.hash_d(folder=nodes.dataset)
+    nodes.dataset_tdf, nodes.dataset_tdf_bin = rules.fetch_data(
+        folder_d=wildcards.dataset
+    )
+    nodes.dataset_hashes = rules.hash_d(
+        analysis_tdf=nodes.dataset_tdf,
+        analysis_tdf_bin=nodes.dataset_tdf_bin,
+    )
 
     nodes.dataset_marginal_distribution_plots = rules.get_marginal_distribution_plots(
-        raw_data=nodes.dataset
+        analysis_tdf=nodes.dataset_tdf,
+        analysis_tdf_bin=nodes.dataset_tdf_bin,
     )
-    nodes.memmapped_dataset = rules.memmap_data(folder_d=nodes.dataset)
+    nodes.memmapped_dataset = rules.memmap_data(
+        analysis_tdf=nodes.dataset_tdf,
+        analysis_tdf_bin=nodes.dataset_tdf_bin,
+    )
+
     nodes.assert_dataset_strictly_lexicographically_sorted = (
-        rules.assert_lexicographically_sorted(rawdata=nodes.memmapped_dataset)
+        rules.assert_lexicographically_sorted(
+            rawdata=nodes.memmapped_dataset,
+        )
     )
 
     nodes.raw_data_2D_histograms = rules.raw_data_2D_histograms(
-        dataset=nodes.dataset, memmapped_dataset=nodes.memmapped_dataset
+        dataset_tdf=nodes.dataset_tdf,
+        dataset_tdf_bin=nodes.dataset_tdf_bin,
+        memmapped_dataset=nodes.memmapped_dataset,
     )
 
-    # nodes.calibration_results = snakemaketools.rules.Node(location="None")
-    nodes.calibration = rules.fetch_data(folder_d=wildcards.calibration)
+    nodes.calibration_tdf, nodes.calibration_tdf_bin = rules.fetch_data(
+        folder_d=wildcards.calibration
+    )
 
-    nodes.calibration_hashes = rules.hash_d(folder=nodes.calibration)
+    nodes.calibration_hashes = rules.hash_d(
+        analysis_tdf=nodes.calibration_tdf,
+        analysis_tdf_bin=nodes.calibration_tdf_bin,
+    )
 
     nodes.calibration_results = snakemaketools.rules.Node(location="none")
-    nodes.dataset_matches_calibration_assertion = snakemaketools.rules.Node(
-        location="none"
-    )
     if not "fasta" in wildcards:
         return nodes
 
     nodes.fasta = rules.get_stored_fasta(fasta=wildcards.fasta)
     nodes.fasta_stats = rules.summarize_fasta(fasta=nodes.fasta)
 
-    if not "None.d" in nodes.calibration.location:
+    nodes.dataset_matches_calibration_assertion = snakemaketools.rules.Node(
+        location="none"
+    )
+
+    if not "None.d" in nodes.calibration_tdf.location:
         nodes.dataset_matches_calibration_assertion = (
             rules.report_if_dataset_and_calibration_comply(
-                dataset=nodes.dataset,
-                calibration=nodes.calibration,
+                dataset_tdf=nodes.dataset_tdf,
+                calibration_tdf=nodes.calibration_tdf,
             )
         )
         nodes.calibration_marginal_distributions = (
-            rules.get_marginal_distribution_plots(raw_data=nodes.calibration)
+            rules.get_marginal_distribution_plots(
+                analysis_tdf=nodes.calibration_tdf,
+                analysis_tdf_bin=nodes.calibration_tdf_bin,
+            )
         )
-        nodes.memmapped_calibration = rules.memmap_data(folder_d=nodes.calibration)
+        nodes.memmapped_calibration = rules.memmap_data(
+            analysis_tdf=nodes.calibration_tdf,
+            analysis_tdf_bin=nodes.calibration_tdf_bin,
+        )
         nodes.calibration_results = rules.precompute_calibration(
-            calibration=nodes.calibration,
+            calibration_tdf=nodes.calibration_tdf,
+            calibration_tdf_bin=nodes.calibration_tdf_bin,
             memmapped_calibration=nodes.memmapped_calibration,
         )
 
@@ -83,7 +109,8 @@ def get_nodes(
             nodes.precursor_clustering_stdout,
             nodes.precursor_clustering_stderr,
         ) = rules.cluster_with_tims(
-            dataset=nodes.dataset,
+            dataset_tdf=nodes.dataset_tdf,
+            dataset_tdf_bin=nodes.dataset_tdf_bin,
             config=nodes.tims_precursor_clusterer_config,
             level="precursor",
             version=configs.precursor_clusterer.wildcards.version,
@@ -109,7 +136,7 @@ def get_nodes(
         ) = rules.tims_reformat(
             clusters_startrek=nodes.precursor_clusters_old_format,
             additional_cluster_stats=nodes.additional_precursor_cluster_stats,
-            dataset=nodes.dataset,
+            dataset_tdf=nodes.dataset_tdf,
             config=nodes.tims_precursors_reformat_config,
         )
         # TODO: add optional sorting
@@ -124,7 +151,8 @@ def get_nodes(
             nodes.fragment_clustering_stdout,
             nodes.fragment_clustering_stderr,
         ) = rules.cluster_with_tims(
-            dataset=nodes.dataset,
+            dataset_tdf=nodes.dataset_tdf,
+            dataset_tdf_bin=nodes.dataset_tdf_bin,
             config=nodes.tims_fragment_clusterer_config,
             level="fragment",
             version=configs.fragment_clusterer.wildcards.version,
@@ -150,7 +178,7 @@ def get_nodes(
         ) = rules.tims_reformat(
             clusters_startrek=nodes.fragment_clusters_old_format,
             additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
-            dataset=nodes.dataset,
+            dataset_tdf=nodes.dataset_tdf,
             config=nodes.tims_fragments_reformat_config,
         )
         # TODO: add optional sorting
@@ -176,7 +204,7 @@ def get_nodes(
         fragment_cluster_stats=nodes.fragment_cluster_stats,
         fragment_clusters=nodes.fragment_clusters,
         calibration_results=nodes.calibration_results,
-        dataset=nodes.dataset,
+        dataset_tdf=nodes.dataset_tdf,
         config=nodes.precursor_prediction_config,
     )
 
@@ -307,7 +335,8 @@ def get_nodes(
     nodes.first_gen_fdr_filtered_mapped_back_search_results_plot = rules.overplot_sage_results_on_window_groups(
         precursor_stats_path=nodes.precursor_cluster_stats,
         filtered_mapped_back_sage_results_path=nodes.first_gen_fdr_filtered_mapped_back_precursors,
-        dataset_path=nodes.dataset,
+        dataset_tdf=nodes.dataset_tdf,
+        dataset_tdf_bin=nodes.dataset_tdf_bin,
         rawdata_histograms_path=nodes.raw_data_2D_histograms,
     )
 
@@ -458,7 +487,8 @@ def get_nodes(
     nodes.second_gen_fdr_filtered_mapped_back_search_results_plot = rules.overplot_sage_results_on_window_groups(
         precursor_stats_path=nodes.precursor_cluster_stats,
         filtered_mapped_back_sage_results_path=nodes.second_gen_fdr_filtered_mapped_back_precursors,
-        dataset_path=nodes.dataset,
+        dataset_tdf=nodes.dataset_tdf,
+        dataset_tdf_bin=nodes.dataset_tdf_bin,
         rawdata_histograms_path=nodes.raw_data_2D_histograms,
     )
 

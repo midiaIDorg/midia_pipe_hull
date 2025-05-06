@@ -125,21 +125,23 @@ def get_nodes(
 
         # TODO: These steps are needed only for compatibility with the old pipeline..
         # but as it is nothing really done everytime: could simply do it above.
-        nodes.tims_precursors_reformat_config = (
-            rules.get_config_from_db_into_file_system(
-                config=configs.tims_reformat_config
+
+        if "tims_reformat_config" in configs:
+            nodes.tims_precursors_reformat_config = (
+                rules.get_config_from_db_into_file_system(
+                    config=configs.tims_reformat_config
+                )
             )
-        )
-        (
-            nodes.precursor_clusters,
-            nodes.additional_precursor_cluster_stats,
-        ) = rules.tims_reformat(
-            clusters_startrek=nodes.precursor_clusters_old_format,
-            additional_cluster_stats=nodes.additional_precursor_cluster_stats,
-            dataset_tdf=nodes.dataset_tdf,
-            config=nodes.tims_precursors_reformat_config,
-        )
-        # TODO: add optional sorting
+            (
+                nodes.precursor_clusters,
+                nodes.additional_precursor_cluster_stats,
+            ) = rules.tims_reformat(
+                clusters_startrek=nodes.precursor_clusters_old_format,
+                additional_cluster_stats=nodes.additional_precursor_cluster_stats,
+                dataset_tdf=nodes.dataset_tdf,
+                config=nodes.tims_precursors_reformat_config,
+            )
+            # TODO: add optional sorting
 
     if configs.fragment_clusterer.wildcards.software == "tims":
         nodes.tims_fragment_clusterer_config = (
@@ -166,22 +168,26 @@ def get_nodes(
             nodes.additional_fragment_cluster_stats_old_format,
         ) = rules.extract_tables_from_hdf(clusters_hdf=nodes.fragment_clusters_hdf)
 
-        nodes.tims_fragments_reformat_config = (
-            rules.get_config_from_db_into_file_system(
-                config=configs.tims_reformat_config
+        if "tims_reformat_config" in configs:
+            nodes.tims_fragments_reformat_config = (
+                rules.get_config_from_db_into_file_system(
+                    config=configs.tims_reformat_config
+                )
             )
-        )
 
-        (
-            nodes.fragment_clusters,
-            nodes.additional_fragment_cluster_stats,
-        ) = rules.tims_reformat(
-            clusters_startrek=nodes.fragment_clusters_old_format,
-            additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
-            dataset_tdf=nodes.dataset_tdf,
-            config=nodes.tims_fragments_reformat_config,
-        )
-        # TODO: add optional sorting
+            (
+                nodes.fragment_clusters,
+                nodes.additional_fragment_cluster_stats,
+            ) = rules.tims_reformat(
+                clusters_startrek=nodes.fragment_clusters_old_format,
+                additional_cluster_stats=nodes.additional_fragment_cluster_stats_old_format,
+                dataset_tdf=nodes.dataset_tdf,
+                config=nodes.tims_fragments_reformat_config,
+            )
+            # TODO: add optional sorting
+
+    if not "precursor_clusters" in nodes:
+        return nodes
 
     # TODO: optimization: instead of .parquet, use .startrek
     nodes.precursor_cluster_stats = rules.get_cluster_stats(

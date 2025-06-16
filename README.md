@@ -1,6 +1,7 @@
 ### midia_pipe_hull
 
-This package controls the installation of midiaID snakemake workflow.
+This package controls the installation of midiaID novemberrain snakemake workflow.
+For more recent pipelines, go to [https://github.com/midiaIDorg/midia_docker](midia_docker) github page.
 
 ## Pipeline installation:
 

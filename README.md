@@ -5,6 +5,9 @@ For more recent pipelines, go to [https://github.com/midiaIDorg/midia_docker](mi
 
 ## Pipeline installation:
 
+Make sure your docker is configured (which includes the user being in the docker group on linux, see [https://docs.docker.com/engine/install/linux-postinstall](here)
+To check it all works, run `docker run hello-world`.
+
 Download the zip file [here](./dockerhub.zip).
 Unzip it. 
 Follow instructions in README from the unzipped folder.
